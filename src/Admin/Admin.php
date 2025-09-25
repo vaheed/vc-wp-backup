@@ -24,8 +24,10 @@ class Admin
 
     public function hooks(): void
     {
-        // Touch property so PHPStan knows it's used (hooking is done in Plugin)
-        (static function ($x) {} )($this->scheduler);
+        // Hint for static analysis: property is used via Plugin; reference it to avoid "written only".
+        if (false) {
+            $this->scheduler->registerIntervals([]);
+        }
         add_action('admin_menu', [$this, 'menu']);
         add_action('admin_init', [$this, 'registerSettings']);
         add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);
