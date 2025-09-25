@@ -34,6 +34,7 @@ class Admin
         add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
         add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
         add_action('admin_post_vcbk_run_restore', [$this, 'handleRunRestore']);
+        add_action('admin_post_vcbk_run_migrate', [$this, 'handleRunMigrate']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
@@ -105,14 +106,6 @@ class Admin
             'manage_options',
             'vcbk-logs',
             [$this, 'renderLogs']
-        );
-        add_submenu_page(
-            'vcbk',
-            __('Status', 'virakcloud-backup'),
-            __('Status', 'virakcloud-backup'),
-            'manage_options',
-            'vcbk-status',
-            [$this, 'renderStatus']
         );
     }
 
@@ -237,22 +230,54 @@ class Admin
     {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('VirakCloud Backup', 'virakcloud-backup') . '</h1>';
-        echo '<p>'
-            . esc_html__('Last backup:', 'virakcloud-backup')
-            . ' '
-            . esc_html(get_option('vcbk_last_backup', '—'))
-            . '</p>';
+        // Summary
+        $last = get_option('vcbk_last_backup', '—');
         $lastUpload = get_option('vcbk_last_s3_upload');
+        $nextTs = wp_next_scheduled('vcbk_cron_run');
+        $tz = wp_timezone();
+        $nextText = $nextTs ? wp_date('Y-m-d H:i', (int) $nextTs, $tz) : __('not scheduled', 'virakcloud-backup');
+        echo '<div class="vcbk-card">';
+        echo '<p>' . esc_html__('Last backup:', 'virakcloud-backup') . ' ' . esc_html((string) $last) . '</p>';
         if ($lastUpload) {
-            echo '<p>' . esc_html__('Last S3 upload:', 'virakcloud-backup') . ' ' . esc_html($lastUpload) . '</p>';
+            echo '<p>' . esc_html__('Last S3 upload:', 'virakcloud-backup') . ' ' . esc_html((string) $lastUpload) . '</p>';
         }
-        $runUrl = wp_nonce_url(
-            admin_url('admin-post.php?action=vcbk_run_backup'),
-            'vcbk_run_backup'
-        );
-        echo '<p><a class="button button-primary" href="' . esc_url($runUrl) . '">'
-            . esc_html__('Run Backup Now', 'virakcloud-backup')
+        echo '<p>' . esc_html__('Next scheduled backup:', 'virakcloud-backup') . ' ' . esc_html($nextText) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=vcbk-backups')) . '">'
+            . esc_html__('Open Backups', 'virakcloud-backup')
             . '</a></p>';
+        echo '</div>';
+
+        // Health (previously on Status page)
+        echo '<div class="vcbk-card">';
+        echo '<h2 style="margin-top:0">' . esc_html__('Status', 'virakcloud-backup') . '</h2>';
+        $tz = wp_timezone();
+        $now = new \DateTimeImmutable('now', $tz);
+        $last = get_option('vcbk_last_backup');
+        $lastText = $last ? human_time_diff(strtotime((string) $last), time()) . ' ' . __('ago', 'virakcloud-backup') : __('never', 'virakcloud-backup');
+        $nextTs = wp_next_scheduled('vcbk_cron_run');
+        $nextText = $nextTs ? wp_date('Y-m-d H:i', (int) $nextTs, $tz) : __('not scheduled', 'virakcloud-backup');
+        $mem = ini_get('memory_limit');
+        $maxExec = ini_get('max_execution_time');
+        $free = function_exists('disk_free_space') ? @disk_free_space(WP_CONTENT_DIR) : null;
+        $freeText = $free !== false && $free !== null ? size_format((float) $free) : __('unknown', 'virakcloud-backup');
+        $s3Ok = false; $s3Err = '';
+        try {
+            (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))
+                ->create()->headBucket(['Bucket' => $this->settings->get()['s3']['bucket']]);
+            $s3Ok = true;
+        } catch (\Throwable $e) {
+            $s3Err = $e->getMessage();
+        }
+        echo '<table class="widefat striped" style="max-width:780px">';
+        echo '<tbody>';
+        $ok = !empty($last); echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Last backup', 'virakcloud-backup') . '</th><td>' . esc_html($lastText) . '</td></tr>';
+        $ok = (bool) $nextTs; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Next run', 'virakcloud-backup') . '</th><td>' . esc_html($nextText) . '</td></tr>';
+        $ok = (int) wp_convert_hr_to_bytes((string) $mem) >= 256*1024*1024; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('PHP memory_limit', 'virakcloud-backup') . '</th><td>' . esc_html((string) $mem) . '</td></tr>';
+        $ok = (int) $maxExec >= 120; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Max execution time', 'virakcloud-backup') . '</th><td>' . esc_html((string) $maxExec) . '</td></tr>';
+        $ok = $free !== null && $free !== false && $free > 500*1024*1024; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Free disk space', 'virakcloud-backup') . '</th><td>' . esc_html((string) $freeText) . '</td></tr>';
+        echo '<tr class="' . esc_attr($s3Ok ? 'vcbk-ok' : 'vcbk-err') . '"><th>' . esc_html__('VirakCloud S3 connectivity', 'virakcloud-backup') . '</th><td>' . ($s3Ok ? esc_html__('OK', 'virakcloud-backup') : esc_html($s3Err)) . '</td></tr>';
+        echo '</tbody></table>';
+        echo '</div>';
         echo '</div>';
     }
 
@@ -302,6 +327,29 @@ class Admin
         );
         echo '</td></tr>';
         echo '</table>';
+
+        // Schedule section (also editable here for convenience)
+        $schedule = $cfg['schedule'];
+        $intervals = ['2h','4h','8h','12h','daily','weekly','fortnightly','monthly'];
+        echo '<h2 style="margin-top:24px">' . esc_html__('Schedule', 'virakcloud-backup') . '</h2>';
+        echo '<table class="form-table">';
+        echo '<tr><th>' . esc_html__('Interval', 'virakcloud-backup') . '</th><td><select name="schedule[interval]">';
+        foreach ($intervals as $i) {
+            $sel = selected($schedule['interval'], $i, false);
+            printf('<option value="%s" %s>%s</option>', esc_attr($i), $sel, esc_html($i));
+        }
+        echo '</select></td></tr>';
+        echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
+        $startVal = esc_attr($schedule['start_time'] ?? '01:30');
+        printf('<input type="text" name="schedule[start_time]" value="%s" class="regular-text" placeholder="HH:MM" />', $startVal);
+        echo '</td></tr>';
+        echo '<tr><th>' . esc_html__('Catch up', 'virakcloud-backup') . '</th><td>';
+        $catchupChecked = checked(!empty($schedule['catchup']), true, false);
+        printf('<label><input type="checkbox" name="schedule[catchup]" %s /> %s</label>', $catchupChecked, esc_html__('Run missed backups', 'virakcloud-backup'));
+        echo '</td></tr>';
+        echo '<tr><th>' . esc_html__('Next run (preview)', 'virakcloud-backup') . '</th><td><em id="vcbk-next-run-preview"></em></td></tr>';
+        echo '</table>';
+
         echo '<p><button class="button">' . esc_html__('Save Settings', 'virakcloud-backup') . '</button> ';
         $testUrl = wp_nonce_url(
             admin_url('admin-post.php?action=vcbk_test_s3'),
@@ -517,14 +565,58 @@ class Admin
     public function renderMigrate(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Migrate', 'virakcloud-backup') . '</h1>';
-        echo '<p>'
-            . esc_html__(
-                'Move this site to another domain. We will update URLs even inside serialized data.',
-                'virakcloud-backup'
-            )
-            . '</p>';
-        echo '<p><em>' . esc_html__('Migration UI coming in subsequent iterations.', 'virakcloud-backup') . '</em></p>';
+        if (!empty($_GET['message'])) {
+            echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
+        }
+        if (!empty($_GET['error'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
+        }
+        echo '<div class="vcbk-card">';
+        echo '<p>' . esc_html__('Replace all occurrences of the old site URL with a new site URL across the database. Serialized data is handled.', 'virakcloud-backup') . '</p>';
+        echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Important: Take a full backup before running migration. This action alters your database.', 'virakcloud-backup') . '</p>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('vcbk_run_migrate');
+        echo '<input type="hidden" name="action" value="vcbk_run_migrate" />';
+        $home = home_url();
+        echo '<table class="form-table">';
+        echo '<tr><th>' . esc_html__('From URL', 'virakcloud-backup') . '</th><td>';
+        printf('<input type="url" name="from" value="%s" class="regular-text" required />', esc_attr($home));
+        echo '</td></tr>';
+        echo '<tr><th>' . esc_html__('To URL', 'virakcloud-backup') . '</th><td>';
+        echo '<input type="url" name="to" value="" class="regular-text" placeholder="https://new.example.com" required />';
+        echo '</td></tr>';
+        echo '</table>';
+        echo '<p><button class="button button-primary">' . esc_html__('Run Migration', 'virakcloud-backup') . '</button></p>';
+        echo '</form>';
         echo '</div>';
+        echo '</div>';
+    }
+
+    public function handleRunMigrate(): void
+    {
+        check_admin_referer('vcbk_run_migrate');
+        if (!current_user_can('update_core')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        $from = isset($_POST['from']) ? esc_url_raw((string) $_POST['from']) : '';
+        $to = isset($_POST['to']) ? esc_url_raw((string) $_POST['to']) : '';
+        if ($from === '' || $to === '' || $from === $to) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Invalid URLs provided', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-migrate')));
+            exit;
+        }
+        try {
+            $mm = new \VirakCloud\Backup\MigrationManager($this->logger);
+            $mm->searchReplace($from, $to);
+            // Update siteurl/home
+            update_option('home', $to);
+            update_option('siteurl', $to);
+            $this->logger->info('migrate_update_urls', ['from' => $from, 'to' => $to]);
+            $msg = __('Migration completed. You may need to re-login.', 'virakcloud-backup');
+            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-migrate')));
+        } catch (\Throwable $e) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-migrate')));
+        }
+        exit;
     }
 
     public function handleWizardNext(): void
@@ -737,8 +829,5 @@ class Admin
         wp_send_json_success(['cmd' => $cmd]);
     }
 
-    public function renderStatus(): void
-    {
-        include VCBK_PLUGIN_DIR . 'views/health.php';
-    }
+    public function renderStatus(): void {}
 }

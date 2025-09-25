@@ -2,9 +2,11 @@
 
 /**
  * Plugin Name: VirakCloud Backup & Migrate
+ * Plugin URI: https://virakcloud.com
  * Description: Backup, restore, and migrate WordPress to VirakCloud S3-compatible storage with scheduled backups.
- * Version: 0.1.0
+ * Version: 0.1.3
  * Author: VirakCloud
+ * Author URI: https://virakcloud.com
  * Text Domain: virakcloud-backup
  * Domain Path: /languages
  */
@@ -12,7 +14,7 @@
 defined('ABSPATH') || exit;
 
 // Basic constants
-define('VCBK_VERSION', '0.1.0');
+define('VCBK_VERSION', '0.1.3');
 define('VCBK_PLUGIN_FILE', __FILE__);
 define('VCBK_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VCBK_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -67,6 +69,15 @@ add_action('plugins_loaded', function () {
         }
     }
 });
+
+// Add helpful links on the plugins list row (Website & Documentation)
+add_filter('plugin_row_meta', function (array $links, string $file) {
+    if ($file === plugin_basename(__FILE__)) {
+        $links[] = '<a href="https://virakcloud.com" target="_blank" rel="noopener noreferrer">' . esc_html__('Website', 'virakcloud-backup') . '</a>';
+        $links[] = '<a href="https://docs.virakcloud.com" target="_blank" rel="noopener noreferrer">' . esc_html__('Documentation', 'virakcloud-backup') . '</a>';
+    }
+    return $links;
+}, 10, 2);
 
 register_activation_hook(__FILE__, function () {
     if (!function_exists('openssl_open') && !function_exists('sodium_crypto_secretbox')) {
