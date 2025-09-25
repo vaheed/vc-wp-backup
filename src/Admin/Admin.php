@@ -449,7 +449,12 @@ class Admin
                 }
                 $params['ContinuationToken'] = isset($res['IsTruncated']) && $res['IsTruncated'] ? $res['NextContinuationToken'] : null;
             } while (!empty($params['ContinuationToken']));
-            usort($items, function ($a, $b) { return strcmp($b['key'], $a['key']); });
+            usort(
+                $items,
+                function ($a, $b) {
+                    return strcmp($b['key'], $a['key']);
+                }
+            );
 
             if (empty($items)) {
                 echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('No backups found in S3 prefix backups/.', 'virakcloud-backup') . '</p>';
