@@ -15,6 +15,12 @@ class BackupManager
         $this->logger = $logger;
     }
 
+    /**
+     * Run a backup.
+     *
+     * @param array<string, mixed> $options
+     * @return array{key: string, manifest: string, local: string}
+     */
     public function run(string $type = 'full', array $options = []): array
     {
         if (!current_user_can('manage_options') && empty($options['schedule'])) {
@@ -88,6 +94,10 @@ class BackupManager
         return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
     }
 
+    /**
+     * @param array<string, mixed> $cfg
+     * @return string[]
+     */
     private function resolvePaths(string $type, array $cfg): array
     {
         $root = ABSPATH;
@@ -133,7 +143,7 @@ class BackupManager
             $rows = $wpdb->get_results("SELECT * FROM `$table`", ARRAY_A);
             foreach ($rows as $row) {
                 $vals = array_map([$this, 'sqlEscape'], array_values($row));
-                $columns = array_map(fn($c) => "`$c`", array_keys($row));
+                $columns = array_map(static fn(string $c): string => "`$c`", array_keys($row));
                 $sql = sprintf(
                     "INSERT INTO `%s` (%s) VALUES (%s);\n",
                     $table,
@@ -148,6 +158,9 @@ class BackupManager
         return $file;
     }
 
+    /**
+     * @param mixed $value
+     */
     private function sqlEscape($value): string
     {
         if ($value === null) {
@@ -156,6 +169,10 @@ class BackupManager
         if (is_numeric($value)) {
             return (string) $value;
         }
-        return "'" . esc_sql((string) $value) . "'";
+        $escaped = esc_sql((string) $value);
+        if (is_array($escaped)) {
+            $escaped = implode(',', array_map('strval', $escaped));
+        }
+        return "'" . $escaped . "'";
     }
 }

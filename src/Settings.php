@@ -6,6 +6,9 @@ class Settings
 {
     private string $option = 'vcbk_settings';
 
+    /**
+     * @return array<string, mixed>
+     */
     public function get(): array
     {
         $defaults = [
@@ -52,11 +55,18 @@ class Settings
         return $merged;
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function set(array $config): void
     {
         update_option($this->option, $config, false);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function sanitizeFromPost(array $data): array
     {
         $cfg = $this->get();
@@ -67,7 +77,9 @@ class Settings
             $cfg['s3']['access_key'] = sanitize_text_field((string) ($data['s3']['access_key'] ?? ''));
             // Never log secret; store as-is (optionally encrypted in future)
             $secret = (string) ($data['s3']['secret_key'] ?? '');
-            $cfg['s3']['secret_key'] = $secret === '' ? $cfg['s3']['secret_key'] : $secret;
+            if ($secret !== '') {
+                $cfg['s3']['secret_key'] = $secret;
+            }
             $cfg['s3']['path_style'] = !empty($data['s3']['path_style']);
         }
         if (isset($data['schedule']) && is_array($data['schedule'])) {

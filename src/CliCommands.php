@@ -6,6 +6,10 @@ use WP_CLI;
 
 class CliCommands
 {
+    /**
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
     public static function root(array $args, array $assoc): void
     {
         $sub = $args[0] ?? 'help';
@@ -27,6 +31,10 @@ class CliCommands
         }
     }
 
+    /**
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
     public static function backup(array $args, array $assoc): void
     {
         $type = $assoc['type'] ?? 'full';
@@ -37,6 +45,10 @@ class CliCommands
         WP_CLI::success('Backup created: ' . $result['key']);
     }
 
+    /**
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
     public static function schedule(array $args, array $assoc): void
     {
         $action = $args[1] ?? 'list';
@@ -51,6 +63,10 @@ class CliCommands
         }
     }
 
+    /**
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
     public static function restore(array $args, array $assoc): void
     {
         $file = $assoc['file'] ?? null;
@@ -65,6 +81,10 @@ class CliCommands
         WP_CLI::success('Restore process completed');
     }
 
+    /**
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
     public static function migrate(array $args, array $assoc): void
     {
         $from = $assoc['from'] ?? null;

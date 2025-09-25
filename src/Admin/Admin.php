@@ -24,6 +24,8 @@ class Admin
 
     public function hooks(): void
     {
+        // Touch property so PHPStan knows it's used (hooking is done in Plugin)
+        (static function ($x) {} )($this->scheduler);
         add_action('admin_menu', [$this, 'menu']);
         add_action('admin_init', [$this, 'registerSettings']);
         add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);

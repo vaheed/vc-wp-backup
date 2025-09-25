@@ -14,6 +14,10 @@ class Scheduler
         add_action('update_option_vcbk_settings', [$this, 'reschedule'], 10, 3);
     }
 
+    /**
+     * @param array<string, array{interval:int, display:string}> $schedules
+     * @return array<string, array{interval:int, display:string}>
+     */
     public function registerIntervals(array $schedules): array
     {
         $schedules['2h'] = [
@@ -43,7 +47,12 @@ class Scheduler
         return $schedules;
     }
 
-    public function reschedule($old, $value, $option): void
+    /**
+     * @param mixed $old
+     * @param mixed $value
+     * @param string $option
+     */
+    public function reschedule(mixed $old, mixed $value, string $option): void
     {
         if ($option !== 'vcbk_settings') {
             return;

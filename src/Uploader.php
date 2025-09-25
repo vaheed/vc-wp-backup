@@ -17,8 +17,15 @@ class Uploader
         $this->logger = $logger;
     }
 
+    /**
+     * @param int $partSize Chunk size in bytes (min 1)
+     * @return array{parts:int}
+     */
     public function uploadMultipart(string $key, string $filePath, int $partSize = 134217728): array
     {
+        if ($partSize < 1) {
+            $partSize = 1;
+        }
         $size = filesize($filePath);
         $this->logger->info('upload_start', ['key' => $key, 'size' => $size]);
         $create = $this->client->createMultipartUpload([
@@ -36,7 +43,10 @@ class Uploader
         $offset = 0;
         while ($offset < $size) {
             $length = min($partSize, $size - $offset);
-            $body = fread($fh, $length);
+            $body = fread($fh, (int) $length);
+            if ($body === false) {
+                throw new \RuntimeException('Read error during multipart upload');
+            }
             $result = $this->client->uploadPart([
                 'Bucket' => $this->bucket,
                 'Key' => $key,

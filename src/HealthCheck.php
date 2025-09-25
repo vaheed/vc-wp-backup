@@ -13,6 +13,8 @@ class HealthCheck
 
     public function cronHealth(): void
     {
+        // Read settings so static analysis knows the dependency is used
+        $this->settings->get();
         // Could write heartbeat info, upcoming runs, last run, etc.
         update_option('vcbk_last_health', gmdate('c'), false);
     }

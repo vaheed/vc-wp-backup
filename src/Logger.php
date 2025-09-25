@@ -17,21 +17,33 @@ class Logger
         $this->logFile = $this->logDir . '/vcbk.log';
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function info(string $event, array $context = []): void
     {
         $this->write('info', $event, $context);
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function error(string $event, array $context = []): void
     {
         $this->write('error', $event, $context);
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function debug(string $event, array $context = []): void
     {
         $this->write('debug', $event, $context);
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     private function write(string $level, string $event, array $context): void
     {
         $entry = [
@@ -44,6 +56,10 @@ class Logger
         file_put_contents($this->logFile, $line, FILE_APPEND | LOCK_EX);
     }
 
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
     private function scrub(array $context): array
     {
         // Remove secrets from logs
@@ -56,6 +72,9 @@ class Logger
         return $context;
     }
 
+    /**
+     * @return string[]
+     */
     public function tail(int $lines = 200): array
     {
         if (!file_exists($this->logFile)) {

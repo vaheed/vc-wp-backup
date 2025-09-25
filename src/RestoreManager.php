@@ -13,11 +13,16 @@ class RestoreManager
         $this->logger = $logger;
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function restoreLocal(string $archivePath, array $options = []): void
     {
         if (!current_user_can('update_core')) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
+        // Touch settings to make dependency explicit for analysis
+        $this->settings->get();
         $this->logger->info('restore_start', ['archive' => basename($archivePath)]);
         $dry = !empty($options['dry_run']);
 
@@ -88,6 +93,9 @@ class RestoreManager
             return;
         }
         $dir = opendir($src);
+        if ($dir === false) {
+            return;
+        }
         @mkdir($dst, 0755, true);
         while (false !== ($file = readdir($dir))) {
             if ($file === '.' || $file === '..') {

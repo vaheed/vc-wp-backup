@@ -20,8 +20,8 @@ class MigrationManager
         $tables = $wpdb->get_col('SHOW TABLES');
         foreach ($tables as $table) {
             $columns = $wpdb->get_results("SHOW COLUMNS FROM `$table`", ARRAY_A);
-            $textCols = array_filter($columns, function ($col) {
-                return preg_match('/text|char|blob|json/i', $col['Type']);
+            $textCols = array_filter($columns, function ($col): bool {
+                return (bool) preg_match('/text|char|blob|json/i', $col['Type']);
             });
             foreach ($textCols as $col) {
                 $name = $col['Field'];
@@ -43,7 +43,11 @@ class MigrationManager
         $this->logger->info('migrate_replace_done', ['from' => $from, 'to' => $to]);
     }
 
-    private function replaceMaybeSerialized($data, string $from, string $to)
+    /**
+     * @param mixed $data
+     * @return mixed
+     */
+    private function replaceMaybeSerialized(mixed $data, string $from, string $to): mixed
     {
         if (is_serialized($data)) {
             $un = @unserialize((string) $data);
@@ -58,7 +62,11 @@ class MigrationManager
         return $data;
     }
 
-    private function deepReplace($value, string $from, string $to)
+    /**
+     * @param mixed $value
+     * @return mixed
+     */
+    private function deepReplace(mixed $value, string $from, string $to): mixed
     {
         if (is_array($value)) {
             foreach ($value as $k => $v) {
@@ -67,7 +75,7 @@ class MigrationManager
             return $value;
         }
         if (is_object($value)) {
-            foreach ($value as $k => $v) {
+            foreach (get_object_vars($value) as $k => $v) {
                 $value->{$k} = $this->deepReplace($v, $from, $to);
             }
             return $value;

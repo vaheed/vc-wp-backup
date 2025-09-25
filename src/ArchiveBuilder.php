@@ -13,13 +13,16 @@ class ArchiveBuilder
 
     /**
      * Build an archive of the given paths.
+     *
      * @param string $format zip|tar.gz
-     * @param array $paths Absolute paths to include
+     * @param string[] $paths Absolute paths to include
      * @param string $output Absolute path of the archive file to create
-     * @param array $exclude Relative path patterns to exclude
+     * @param string[] $exclude Relative path patterns to exclude
+     * @return array<string, mixed>
      */
     public function build(string $format, array $paths, string $output, array $exclude = []): array
     {
+        $this->logger->debug('archive_build_start', ['format' => $format, 'output' => $output]);
         $format = $format === 'tar.gz' ? 'tar.gz' : 'zip';
         $manifest = [
             'format' => $format,
@@ -52,9 +55,13 @@ class ArchiveBuilder
         // Hash
         $hash = hash_file('sha256', $output);
         $manifest['sha256'] = $hash;
+        $this->logger->debug('archive_build_complete', ['output' => $output, 'sha256' => $hash]);
         return $manifest;
     }
 
+    /**
+     * @param string[] $exclude
+     */
     private function addDirToZip(\ZipArchive $zip, string $base, array $exclude): void
     {
         $baseName = basename($base);
@@ -75,6 +82,9 @@ class ArchiveBuilder
         }
     }
 
+    /**
+     * @param string[] $exclude
+     */
     private function addDirToTar(\PharData $phar, string $base, array $exclude): void
     {
         $baseName = basename($base);
@@ -91,6 +101,9 @@ class ArchiveBuilder
         }
     }
 
+    /**
+     * @param string[] $exclude
+     */
     private function isExcluded(string $relativePath, array $exclude): bool
     {
         foreach ($exclude as $pattern) {
