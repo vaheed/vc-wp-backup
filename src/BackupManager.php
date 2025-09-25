@@ -54,6 +54,7 @@ class BackupManager
             'exclude' => $exclude,
         ]);
         $this->logger->setProgress(10, __('Preparing', 'virakcloud-backup'));
+        $this->checkControl();
 
         // DB dump if needed
         $dbDumpPath = null;
@@ -66,6 +67,7 @@ class BackupManager
             }
             $this->logger->debug('db_dump_complete', ['path' => $dbDumpPath]);
             $this->logger->setProgress(35, __('Archiving Files', 'virakcloud-backup'));
+            $this->checkControl();
         }
 
         // Build archive
@@ -73,6 +75,7 @@ class BackupManager
         $this->logger->setProgress(40, __('Archiving Files', 'virakcloud-backup'));
         $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude);
         $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
+        $this->checkControl();
 
         // Generate manifest.json
         $manifestArr = [
@@ -98,6 +101,7 @@ class BackupManager
         if ($shouldUpload) {
             $this->logger->debug('s3_upload_init');
             $this->logger->setProgress(80, __('Uploading', 'virakcloud-backup'));
+            $this->checkControl();
             $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
             $bucket = $cfg['s3']['bucket'];
             $uploader = new Uploader($s3, $bucket, $this->logger);

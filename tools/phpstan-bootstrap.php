@@ -19,3 +19,7 @@ if (!class_exists('WP_CLI')) {
     }
 }
 
+// Plugin constants used throughout the codebase (for static analysis only)
+defined('VCBK_VERSION') || define('VCBK_VERSION', '0.0.0');
+defined('VCBK_PLUGIN_FILE') || define('VCBK_PLUGIN_FILE', __FILE__);
+defined('VCBK_PLUGIN_DIR') || define('VCBK_PLUGIN_DIR', __DIR__ . '/../');

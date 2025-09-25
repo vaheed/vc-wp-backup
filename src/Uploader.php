@@ -41,6 +41,10 @@ class Uploader
         return $this->uploadMultipart($key, $filePath, $partSize);
     }
 
+    /**
+     * Perform multipart upload of a file to S3.
+     * @return array{parts:int}
+     */
     public function uploadMultipart(string $key, string $filePath, int $partSize = 134217728): array
     {
         if ($partSize < 1) {

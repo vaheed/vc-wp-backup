@@ -108,7 +108,8 @@ class Logger
      */
     public function tail(int $lines = 500): array
     {
-        $file = $this->currentLogFile();
+        // Prefer the last file we wrote to if available
+        $file = $this->logFile ?: $this->currentLogFile();
         if (!file_exists($file)) {
             $candidates = glob($this->logDir . '/vcbk-*.log');
             if (!$candidates) {
