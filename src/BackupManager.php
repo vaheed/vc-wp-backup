@@ -47,14 +47,21 @@ class BackupManager
         // Prepare paths
         $paths = $this->resolvePaths($type, $cfg);
         $exclude = $cfg['backup']['exclude'] ?? [];
+        $this->logger->debug('paths_resolved', [
+            'type' => $type,
+            'paths' => $paths,
+            'exclude' => $exclude,
+        ]);
 
         // DB dump if needed
         $dbDumpPath = null;
         if (in_array($type, ['full', 'db', 'incremental'], true)) {
+            $this->logger->debug('db_dump_start');
             $dbDumpPath = $this->dumpDatabase($work);
             if ($dbDumpPath) {
                 $paths[] = $dbDumpPath;
             }
+            $this->logger->debug('db_dump_complete', ['path' => $dbDumpPath]);
         }
 
         // Build archive
@@ -76,16 +83,33 @@ class BackupManager
         $manifestJson = wp_json_encode($manifestArr, JSON_PRETTY_PRINT);
         $manifestLocal = $archivePath . '.manifest.json';
         file_put_contents($manifestLocal, $manifestJson);
+        $this->logger->debug('manifest_written', ['file' => $manifestLocal]);
 
         // Upload to S3
-        $s3 = (new S3ClientFactory($this->settings))->create();
+        $this->logger->debug('s3_upload_init');
+        $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
         $bucket = $cfg['s3']['bucket'];
         $uploader = new Uploader($s3, $bucket, $this->logger);
 
         $keyArchive = $keyPrefix . $archiveName;
         $keyManifest = $keyPrefix . 'manifest.json';
-        $uploader->uploadMultipart($keyArchive, $archivePath);
-        $s3->putObject(['Bucket' => $bucket, 'Key' => $keyManifest, 'Body' => $manifestJson]);
+        try {
+            $uploader->uploadMultipart($keyArchive, $archivePath);
+            $s3->putObject([
+                'Bucket' => $bucket,
+                'Key' => $keyManifest,
+                'Body' => $manifestJson,
+            ]);
+            $this->logger->info('s3_upload_complete', [
+                'archive' => $keyArchive,
+                'manifest' => $keyManifest,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->error('s3_upload_failed', [
+                'message' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
 
         // Retention policies could be applied here (list, prune)
         $this->logger->info('backup_complete', ['archive' => $keyArchive]);

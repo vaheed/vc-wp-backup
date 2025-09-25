@@ -31,6 +31,7 @@ class Admin
         add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);
         add_action('admin_post_vcbk_run_backup', [$this, 'handleRunBackup']);
         add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
+        add_action('admin_post_vcbk_wizard_next', [$this, 'handleWizardNext']);
     }
 
     public function menu(): void
@@ -42,6 +43,14 @@ class Admin
             'vcbk',
             [$this, 'renderDashboard'],
             'dashicons-cloud'
+        );
+        add_submenu_page(
+            'vcbk',
+            __('Setup Wizard', 'virakcloud-backup'),
+            __('Setup Wizard', 'virakcloud-backup'),
+            'manage_options',
+            'vcbk-setup',
+            [$this, 'renderWizard']
         );
         add_submenu_page(
             'vcbk',
@@ -144,7 +153,7 @@ class Admin
         if (!current_user_can('manage_options')) {
             wp_die(__('Insufficient permissions', 'virakcloud-backup'));
         }
-        $client = (new S3ClientFactory($this->settings))->create();
+        $client = (new S3ClientFactory($this->settings, $this->logger))->create();
         try {
             $client->headBucket(['Bucket' => $this->settings->get()['s3']['bucket']]);
             $msg = __('S3 connection success!', 'virakcloud-backup');
@@ -307,6 +316,131 @@ class Admin
             )
             . '</p>';
         echo '<p><em>' . esc_html__('Migration UI coming in subsequent iterations.', 'virakcloud-backup') . '</em></p>';
+        echo '</div>';
+    }
+
+    public function handleWizardNext(): void
+    {
+        check_admin_referer('vcbk_wizard');
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        $step = isset($_POST['step']) ? (int) $_POST['step'] : 1;
+        if ($step === 1) {
+            $data = wp_unslash($_POST);
+            $config = $this->settings->sanitizeFromPost($data);
+            $this->settings->set($config);
+            $next = add_query_arg('step', '2', admin_url('admin.php?page=vcbk-setup'));
+            wp_safe_redirect($next);
+            exit;
+        }
+        if ($step === 2) {
+            try {
+                (new S3ClientFactory($this->settings, $this->logger))->create()
+                    ->headBucket(['Bucket' => $this->settings->get()['s3']['bucket']]);
+                $next = add_query_arg('step', '3', admin_url('admin.php?page=vcbk-setup'));
+            } catch (\Throwable $e) {
+                $next = add_query_arg([
+                    'step' => '2',
+                    'error' => rawurlencode($e->getMessage()),
+                ], admin_url('admin.php?page=vcbk-setup'));
+            }
+            wp_safe_redirect($next);
+            exit;
+        }
+        if ($step === 3) {
+            $data = wp_unslash($_POST);
+            $config = $this->settings->sanitizeFromPost($data);
+            $this->settings->set($config);
+            $done = add_query_arg('done', '1', admin_url('admin.php?page=vcbk-setup'));
+            wp_safe_redirect($done);
+            exit;
+        }
+        wp_safe_redirect(admin_url('admin.php?page=vcbk-setup'));
+        exit;
+    }
+
+    public function renderWizard(): void
+    {
+        $step = isset($_GET['step']) ? (int) $_GET['step'] : 1;
+        $cfg = $this->settings->get();
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('VirakCloud Backup • Setup Wizard', 'virakcloud-backup') . '</h1>';
+        echo '<ol class="vcbk-steps"><li>' . esc_html__('Connect Storage', 'virakcloud-backup') . '</li><li>' . esc_html__('Test Connection', 'virakcloud-backup') . '</li><li>' . esc_html__('Schedule', 'virakcloud-backup') . '</li></ol>';
+        if ($step === 1) {
+            echo '<h2>' . esc_html__('Step 1: S3 Settings', 'virakcloud-backup') . '</h2>';
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('vcbk_wizard');
+            echo '<input type="hidden" name="action" value="vcbk_wizard_next" />';
+            echo '<input type="hidden" name="step" value="1" />';
+            $s3 = $cfg['s3'];
+            $fields = [
+                'endpoint' => 'Endpoint',
+                'region' => 'Region (optional)',
+                'bucket' => 'Bucket',
+                'access_key' => 'Access Key',
+                'secret_key' => 'Secret Key',
+            ];
+            echo '<table class="form-table">';
+            foreach ($fields as $key => $label) {
+                $val = isset($s3[$key]) ? (string) $s3[$key] : '';
+                $type = ($key === 'secret_key') ? 'password' : 'text';
+                echo '<tr><th><label>' . esc_html__($label, 'virakcloud-backup') . '</label></th><td>';
+                printf(
+                    '<input type="%s" name="s3[%s]" value="%s" class="regular-text" />',
+                    esc_attr($type),
+                    esc_attr($key),
+                    esc_attr($val)
+                );
+                echo '</td></tr>';
+            }
+            echo '<tr><th>' . esc_html__('Path Style', 'virakcloud-backup') . '</th><td>';
+            printf(
+                '<label><input type="checkbox" name="s3[path_style]" %s /> %s</label>',
+                checked(!empty($s3['path_style']), true, false),
+                esc_html__('Use path-style addressing (recommended)', 'virakcloud-backup')
+            );
+            echo '</td></tr>';
+            echo '</table><p><button class="button button-primary">' . esc_html__('Continue', 'virakcloud-backup') . '</button></p>';
+            echo '</form>';
+        } elseif ($step === 2) {
+            echo '<h2>' . esc_html__('Step 2: Test Connection', 'virakcloud-backup') . '</h2>';
+            if (!empty($_GET['error'])) {
+                echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
+            }
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('vcbk_wizard');
+            echo '<input type="hidden" name="action" value="vcbk_wizard_next" />';
+            echo '<input type="hidden" name="step" value="2" />';
+            echo '<p>' . esc_html__('We will try to access your bucket using the settings from Step 1.', 'virakcloud-backup') . '</p>';
+            echo '<p><button class="button button-primary">' . esc_html__('Run Connection Test', 'virakcloud-backup') . '</button></p>';
+            echo '</form>';
+        } else {
+            echo '<h2>' . esc_html__('Step 3: Schedule Backups', 'virakcloud-backup') . '</h2>';
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('vcbk_wizard');
+            echo '<input type="hidden" name="action" value="vcbk_wizard_next" />';
+            echo '<input type="hidden" name="step" value="3" />';
+            $schedule = $cfg['schedule'];
+            $intervals = ['2h','4h','8h','12h','daily','weekly','fortnightly','monthly'];
+            echo '<table class="form-table">';
+            echo '<tr><th>' . esc_html__('Interval', 'virakcloud-backup') . '</th><td><select name="schedule[interval]">';
+            foreach ($intervals as $i) {
+                printf('<option value="%s" %s>%s</option>', esc_attr($i), selected($schedule['interval'], $i, false), esc_html($i));
+            }
+            echo '</select></td></tr>';
+            echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
+            printf('<input type="text" name="schedule[start_time]" value="%s" class="regular-text" placeholder="HH:MM" />', esc_attr($schedule['start_time'] ?? '01:30'));
+            echo '</td></tr>';
+            echo '<tr><th>' . esc_html__('Catch up', 'virakcloud-backup') . '</th><td>';
+            printf('<label><input type="checkbox" name="schedule[catchup]" %s /> %s</label>', checked(!empty($schedule['catchup']), true, false), esc_html__('Run missed backups', 'virakcloud-backup'));
+            echo '</td></tr>';
+            echo '</table><p><button class="button button-primary">' . esc_html__('Finish Setup', 'virakcloud-backup') . '</button></p>';
+            echo '</form>';
+            if (!empty($_GET['done'])) {
+                echo '<div class="notice notice-success"><p>' . esc_html__('Setup is complete. You can run your first backup from the Backups tab.', 'virakcloud-backup') . '</p></div>';
+            }
+        }
         echo '</div>';
     }
 

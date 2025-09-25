@@ -26,6 +26,8 @@ jobs:
         run: composer stan
       - name: Tests (PHPUnit)
         run: composer test
+      - name: Prepare Production Vendor
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
       - name: Build Zip
         run: composer build-zip
       - name: Upload Plugin Artifact
