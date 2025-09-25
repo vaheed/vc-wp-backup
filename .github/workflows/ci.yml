@@ -16,19 +16,14 @@ jobs:
         with:
           php-version: '8.2'
           tools: composer
+          extensions: zip
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
-        working-directory: wp-content/plugins/virakcloud-backup
       - name: Lint (PHPCS)
         run: composer lint
-        working-directory: wp-content/plugins/virakcloud-backup
       - name: Static Analysis (PHPStan)
         run: composer stan
-        working-directory: wp-content/plugins/virakcloud-backup
       - name: Tests (PHPUnit)
         run: composer test
-        working-directory: wp-content/plugins/virakcloud-backup
       - name: Build Zip
         run: composer build-zip
-        working-directory: wp-content/plugins/virakcloud-backup
-

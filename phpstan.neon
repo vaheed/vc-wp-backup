@@ -3,4 +3,5 @@ parameters:
   paths:
     - src
   checkGenericClassInNonGenericObjectType: false
-
+  bootstrapFiles:
+    - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
