@@ -41,6 +41,118 @@ class RestoreManager
     }
 
     /**
+     * Full-site restore from a local archive. Copies entire WordPress tree (core + content).
+     * Safer to run via WP-CLI to avoid timeouts and self-overwrite.
+     *
+     * @param array<string, mixed> $options { preserve_plugin?:bool, dry_run?:bool }
+     */
+    public function restoreFullLocal(string $archivePath, array $options = []): void
+    {
+        if (!current_user_can('update_core')) {
+            throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
+        }
+        $preservePlugin = array_key_exists('preserve_plugin', $options) ? (bool) $options['preserve_plugin'] : true;
+        $dry = !empty($options['dry_run']);
+
+        $this->logger->info('restore_full_start', ['archive' => basename($archivePath)]);
+        $this->logger->setProgress(10, __('Preparing', 'virakcloud-backup'));
+
+        // Extract
+        $tmp = wp_tempnam('vcbk-restore-full');
+        if (!$tmp) {
+            throw new \RuntimeException('Cannot create temp file');
+        }
+        $tmpDir = $tmp . '-dir';
+        wp_mkdir_p($tmpDir);
+        $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
+        if ($ext === 'zip') {
+            $zip = new \ZipArchive();
+            if ($zip->open($archivePath) !== true) {
+                throw new \RuntimeException('Cannot open archive');
+            }
+            $zip->extractTo($tmpDir);
+            $zip->close();
+        } else {
+            if (str_ends_with($archivePath, '.tar.gz')) {
+                $pharGz = new \PharData($archivePath);
+                $tarPath = substr($archivePath, 0, -3);
+                $pharGz->decompress();
+                $phar = new \PharData($tarPath);
+                $phar->extractTo($tmpDir, null, true);
+                @unlink($tarPath);
+            } else {
+                $phar = new \PharData($archivePath);
+                $phar->extractTo($tmpDir, null, true);
+            }
+        }
+
+        // Find WP root inside extracted data
+        $srcRoot = $tmpDir;
+        if (!file_exists($srcRoot . '/wp-content') && is_dir($srcRoot)) {
+            foreach (glob($srcRoot . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+                if (file_exists($dir . '/wp-content') || file_exists($dir . '/wp-includes')) {
+                    $srcRoot = $dir;
+                    break;
+                }
+            }
+        }
+        $this->logger->setProgress(35, __('Unpacked', 'virakcloud-backup'));
+
+        if ($dry) {
+            $this->logger->info('restore_full_dry_run_complete', ['srcRoot' => $srcRoot]);
+            return;
+        }
+
+        // Import DB if present at root of extracted dir
+        $sqlPaths = array_merge(
+            glob($tmpDir . '/*.sql') ?: [],
+            glob($srcRoot . '/*.sql') ?: []
+        );
+        if (!empty($sqlPaths)) {
+            $this->logger->setProgress(45, __('Restoring DB', 'virakcloud-backup'));
+            $this->importDatabase($sqlPaths[0]);
+        }
+
+        $this->logger->setProgress(65, __('Restoring Files', 'virakcloud-backup'));
+
+        // Copy tree into ABSPATH with excludes
+        $exclude = function (string $rel) use ($preservePlugin): bool {
+            $rel = ltrim($rel, '/');
+            if (str_starts_with($rel, 'wp-content/uploads/virakcloud-backup')) {
+                return true;
+            }
+            if ($preservePlugin && str_starts_with($rel, 'wp-content/plugins/virakcloud-backup')) {
+                return true;
+            }
+            return false;
+        };
+        $this->copyTree($srcRoot, rtrim(ABSPATH, '/'), $exclude);
+
+        $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+        $this->logger->info('restore_full_complete');
+        $this->logger->setProgress(100, __('Complete', 'virakcloud-backup'));
+    }
+
+    /**
+     * Full-site restore by downloading from S3 first.
+     *
+     * @param array<string, mixed> $options
+     */
+    public function restoreFullFromS3(string $key, array $options = []): void
+    {
+        $cfg = $this->settings->get();
+        $client = (new S3ClientFactory($this->settings, $this->logger))->create();
+        $bucket = $cfg['s3']['bucket'];
+        $upload = wp_get_upload_dir();
+        $restoreDir = trailingslashit($upload['basedir']) . 'virakcloud-backup/restore';
+        wp_mkdir_p($restoreDir);
+        $local = $restoreDir . '/' . basename($key);
+        $this->logger->info('restore_full_download_start', ['key' => $key]);
+        $client->getObject(['Bucket' => $bucket, 'Key' => $key, 'SaveAs' => $local]);
+        $this->restoreFullLocal($local, $options);
+    }
+
+    /**
      * @param array<string, mixed> $options
      */
     public function restoreLocal(string $archivePath, array $options = []): void
@@ -150,5 +262,35 @@ class RestoreManager
             }
         }
         closedir($dir);
+    }
+
+    /**
+     * Copy an entire tree from src to dst applying an exclusion callback on relative paths.
+     * @param callable(string):bool $exclude
+     */
+    private function copyTree(string $srcRoot, string $dstRoot, callable $exclude): void
+    {
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($srcRoot, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($it as $path => $info) {
+            $rel = ltrim(substr((string) $path, strlen($srcRoot)), '/');
+            if ($exclude($rel)) {
+                continue;
+            }
+            $target = rtrim($dstRoot, '/') . '/' . $rel;
+            if ($info->isDir()) {
+                if (!is_dir($target)) {
+                    @mkdir($target, 0755, true);
+                }
+            } else {
+                $dir = dirname($target);
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0755, true);
+                }
+                @copy($path, $target);
+            }
+        }
     }
 }

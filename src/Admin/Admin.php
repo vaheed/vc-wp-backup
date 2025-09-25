@@ -247,6 +247,53 @@ class Admin
             . '</a></p>';
         echo '</div>';
 
+        // Recent backups (from S3)
+        echo '<div class="vcbk-card">';
+        echo '<h2 style="margin-top:0">' . esc_html__('Recent Backups', 'virakcloud-backup') . '</h2>';
+        try {
+            $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $this->settings->get()['s3']['bucket'];
+            $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
+            $items = [];
+            foreach ((array) ($res['Contents'] ?? []) as $obj) {
+                $key = (string) $obj['Key'];
+                if (!str_contains($key, 'backup-')) {
+                    continue;
+                }
+                $items[] = [
+                    'key' => $key,
+                    'size' => (int) $obj['Size'],
+                    'modified' => method_exists($obj['LastModified'] ?? null, 'format')
+                        ? (string) $obj['LastModified']->format('c')
+                        : '',
+                ];
+            }
+            usort(
+                $items,
+                function ($a, $b) {
+                    return strcmp($b['key'], $a['key']);
+                }
+            );
+            $items = array_slice($items, 0, 5);
+            if (empty($items)) {
+                echo '<p class="vcbk-muted">' . esc_html__('No backups found yet.', 'virakcloud-backup') . '</p>';
+            } else {
+                echo '<ul>';
+                foreach ($items as $it) {
+                    $key = $it['key'];
+                    $size = size_format((float) $it['size']);
+                    $restoreUrl = add_query_arg('key', rawurlencode($key), admin_url('admin.php?page=vcbk-restore'));
+                    echo '<li>' . esc_html($key . ' (' . $size . ')') . ' — ';
+                    echo '<a href="' . esc_url($restoreUrl) . '">' . esc_html__('Restore', 'virakcloud-backup') . '</a>';
+                    echo '</li>';
+                }
+                echo '</ul>';
+            }
+        } catch (\Throwable $e) {
+            echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
+        }
+        echo '</div>';
+
         // Health (previously on Status page)
         echo '<div class="vcbk-card">';
         echo '<h2 style="margin-top:0">' . esc_html__('Status', 'virakcloud-backup') . '</h2>';
@@ -260,7 +307,8 @@ class Admin
         $maxExec = ini_get('max_execution_time');
         $free = function_exists('disk_free_space') ? @disk_free_space(WP_CONTENT_DIR) : null;
         $freeText = $free !== false && $free !== null ? size_format((float) $free) : __('unknown', 'virakcloud-backup');
-        $s3Ok = false; $s3Err = '';
+        $s3Ok = false;
+        $s3Err = '';
         try {
             (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))
                 ->create()->headBucket(['Bucket' => $this->settings->get()['s3']['bucket']]);
@@ -270,12 +318,34 @@ class Admin
         }
         echo '<table class="widefat striped" style="max-width:780px">';
         echo '<tbody>';
-        $ok = !empty($last); echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Last backup', 'virakcloud-backup') . '</th><td>' . esc_html($lastText) . '</td></tr>';
-        $ok = (bool) $nextTs; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Next run', 'virakcloud-backup') . '</th><td>' . esc_html($nextText) . '</td></tr>';
-        $ok = (int) wp_convert_hr_to_bytes((string) $mem) >= 256*1024*1024; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('PHP memory_limit', 'virakcloud-backup') . '</th><td>' . esc_html((string) $mem) . '</td></tr>';
-        $ok = (int) $maxExec >= 120; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Max execution time', 'virakcloud-backup') . '</th><td>' . esc_html((string) $maxExec) . '</td></tr>';
-        $ok = $free !== null && $free !== false && $free > 500*1024*1024; echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '"><th>' . esc_html__('Free disk space', 'virakcloud-backup') . '</th><td>' . esc_html((string) $freeText) . '</td></tr>';
-        echo '<tr class="' . esc_attr($s3Ok ? 'vcbk-ok' : 'vcbk-err') . '"><th>' . esc_html__('VirakCloud S3 connectivity', 'virakcloud-backup') . '</th><td>' . ($s3Ok ? esc_html__('OK', 'virakcloud-backup') : esc_html($s3Err)) . '</td></tr>';
+        $ok = !empty($last);
+        echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
+            . '<th>' . esc_html__('Last backup', 'virakcloud-backup') . '</th>'
+            . '<td>' . esc_html($lastText) . '</td></tr>';
+
+        $ok = (bool) $nextTs;
+        echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
+            . '<th>' . esc_html__('Next run', 'virakcloud-backup') . '</th>'
+            . '<td>' . esc_html($nextText) . '</td></tr>';
+
+        $ok = (int) wp_convert_hr_to_bytes((string) $mem) >= 256 * 1024 * 1024;
+        echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
+            . '<th>' . esc_html__('PHP memory_limit', 'virakcloud-backup') . '</th>'
+            . '<td>' . esc_html((string) $mem) . '</td></tr>';
+
+        $ok = (int) $maxExec >= 120;
+        echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
+            . '<th>' . esc_html__('Max execution time', 'virakcloud-backup') . '</th>'
+            . '<td>' . esc_html((string) $maxExec) . '</td></tr>';
+
+        $ok = $free !== null && $free !== false && $free > 500 * 1024 * 1024;
+        echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
+            . '<th>' . esc_html__('Free disk space', 'virakcloud-backup') . '</th>'
+            . '<td>' . esc_html((string) $freeText) . '</td></tr>';
+
+        echo '<tr class="' . esc_attr($s3Ok ? 'vcbk-ok' : 'vcbk-err') . '">'
+            . '<th>' . esc_html__('VirakCloud S3 connectivity', 'virakcloud-backup') . '</th>'
+            . '<td>' . ($s3Ok ? esc_html__('OK', 'virakcloud-backup') : esc_html($s3Err)) . '</td></tr>';
         echo '</tbody></table>';
         echo '</div>';
         echo '</div>';
@@ -476,7 +546,13 @@ class Admin
     {
         echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
         echo '<div class="vcbk-card">';
-        echo '<p>' . esc_html__('Pick a backup from your VirakCloud S3 bucket. We will restore the database and wp-content files. This may overwrite existing data.', 'virakcloud-backup') . '</p>';
+        echo '<p>'
+            . esc_html__(
+                'Pick a backup from your VirakCloud S3 bucket. We will restore the database and wp-content files. '
+                . 'This may overwrite existing data.',
+                'virakcloud-backup'
+            )
+            . '</p>';
         try {
             $client = (new S3ClientFactory($this->settings, $this->logger))->create();
             $bucket = $this->settings->get()['s3']['bucket'];
@@ -504,6 +580,7 @@ class Admin
                 }
             );
 
+            $selectedKey = isset($_GET['key']) ? (string) $_GET['key'] : '';
             if (empty($items)) {
                 echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('No backups found in S3 prefix backups/.', 'virakcloud-backup') . '</p>';
             } else {
@@ -514,11 +591,17 @@ class Admin
                 echo '<select name="key" class="regular-text" style="min-width:420px">';
                 foreach ($items as $it) {
                     $label = $it['key'] . ' (' . size_format($it['size']) . ')';
-                    printf('<option value="%s">%s</option>', esc_attr($it['key']), esc_html($label));
+                    $sel = selected($selectedKey, $it['key'], false);
+                    printf('<option value="%s" %s>%s</option>', esc_attr($it['key']), $sel, esc_html($label));
                 }
                 echo '</select></label> ';
-                echo '<label style="margin-left:12px"><input type="checkbox" name="dry_run" /> ' . esc_html__('Dry Run (extract and validate only)', 'virakcloud-backup') . '</label> ';
-                echo '<button class="button button-primary" style="margin-left:12px">' . esc_html__('Start Restore', 'virakcloud-backup') . '</button>';
+                echo '<label style="margin-left:12px">';
+                echo '<input type="checkbox" name="dry_run" /> ';
+                echo esc_html__('Dry Run (extract and validate only)', 'virakcloud-backup');
+                echo '</label> ';
+                echo '<button class="button button-primary" style="margin-left:12px">';
+                echo esc_html__('Start Restore', 'virakcloud-backup');
+                echo '</button>';
                 echo '</form>';
             }
         } catch (\Throwable $e) {
@@ -829,5 +912,8 @@ class Admin
         wp_send_json_success(['cmd' => $cmd]);
     }
 
-    public function renderStatus(): void {}
+    public function renderStatus(): void
+    {
+        // Status merged into dashboard. Intentionally left blank.
+    }
 }

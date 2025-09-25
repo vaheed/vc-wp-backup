@@ -26,8 +26,11 @@ class CliCommands
             case 'migrate':
                 self::migrate($args, $assoc);
                 break;
+            case 'restore-full':
+                self::restoreFull($args, $assoc);
+                break;
             default:
-                WP_CLI::log('Usage: wp vcbk <backup|schedule|restore|migrate>');
+                WP_CLI::log('Usage: wp vcbk <backup|schedule|restore|restore-full|migrate>');
         }
     }
 
@@ -79,6 +82,34 @@ class CliCommands
         $rm = new RestoreManager($settings, $logger);
         $rm->restoreLocal($file, ['dry_run' => !empty($assoc['dry-run'])]);
         WP_CLI::success('Restore process completed');
+    }
+
+    /**
+     * Full-site restore. Usage:
+     *   wp vcbk restore-full --file=/path/to/archive.zip [--no-preserve-plugin] [--dry-run]
+     *   wp vcbk restore-full --key=backups/backup-20250101-010101.zip [--no-preserve-plugin]
+     *
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
+    public static function restoreFull(array $args, array $assoc): void
+    {
+        $settings = new Settings();
+        $logger = new Logger();
+        $rm = new RestoreManager($settings, $logger);
+        $preserve = !isset($assoc['no-preserve-plugin']);
+        $opts = ['preserve_plugin' => $preserve, 'dry_run' => !empty($assoc['dry-run'])];
+        if (!empty($assoc['key'])) {
+            $rm->restoreFullFromS3((string) $assoc['key'], $opts);
+        } else {
+            $file = $assoc['file'] ?? null;
+            if (!$file || !file_exists($file)) {
+                WP_CLI::error('Provide --file= or --key=');
+                return;
+            }
+            $rm->restoreFullLocal((string) $file, $opts);
+        }
+        WP_CLI::success('Full-site restore completed');
     }
 
     /**
