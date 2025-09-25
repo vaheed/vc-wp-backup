@@ -43,6 +43,7 @@ class BackupManager
         $archivePath = trailingslashit($archives) . $archiveName;
 
         $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
+        $this->logger->setProgress(5, 'start');
 
         // Prepare paths
         $paths = $this->resolvePaths($type, $cfg);
@@ -52,21 +53,26 @@ class BackupManager
             'paths' => $paths,
             'exclude' => $exclude,
         ]);
+        $this->logger->setProgress(10, 'paths');
 
         // DB dump if needed
         $dbDumpPath = null;
         if (in_array($type, ['full', 'db', 'incremental'], true)) {
             $this->logger->debug('db_dump_start');
+            $this->logger->setProgress(20, 'db-dump');
             $dbDumpPath = $this->dumpDatabase($work);
             if ($dbDumpPath) {
                 $paths[] = $dbDumpPath;
             }
             $this->logger->debug('db_dump_complete', ['path' => $dbDumpPath]);
+            $this->logger->setProgress(35, 'db-done');
         }
 
         // Build archive
         $arch = new ArchiveBuilder($this->logger);
+        $this->logger->setProgress(40, 'archive-start');
         $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude);
+        $this->logger->setProgress(70, 'archive-done');
 
         // Generate manifest.json
         $manifestArr = [
@@ -86,29 +92,36 @@ class BackupManager
         $this->logger->debug('manifest_written', ['file' => $manifestLocal]);
 
         // Upload to S3
-        $this->logger->debug('s3_upload_init');
-        $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
-        $bucket = $cfg['s3']['bucket'];
-        $uploader = new Uploader($s3, $bucket, $this->logger);
-
+        $shouldUpload = !empty($options['schedule']) || !empty($options['upload']);
         $keyArchive = $keyPrefix . $archiveName;
         $keyManifest = $keyPrefix . 'manifest.json';
-        try {
-            $uploader->uploadMultipart($keyArchive, $archivePath);
-            $s3->putObject([
-                'Bucket' => $bucket,
-                'Key' => $keyManifest,
-                'Body' => $manifestJson,
-            ]);
-            $this->logger->info('s3_upload_complete', [
-                'archive' => $keyArchive,
-                'manifest' => $keyManifest,
-            ]);
-        } catch (\Throwable $e) {
-            $this->logger->error('s3_upload_failed', [
-                'message' => $e->getMessage(),
-            ]);
-            throw $e;
+        if ($shouldUpload) {
+            $this->logger->debug('s3_upload_init');
+            $this->logger->setProgress(80, 'upload-start');
+            $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $cfg['s3']['bucket'];
+            $uploader = new Uploader($s3, $bucket, $this->logger);
+            try {
+                $uploader->uploadMultipart($keyArchive, $archivePath);
+                $s3->putObject([
+                    'Bucket' => $bucket,
+                    'Key' => $keyManifest,
+                    'Body' => $manifestJson,
+                ]);
+                $this->logger->info('s3_upload_complete', [
+                    'archive' => $keyArchive,
+                    'manifest' => $keyManifest,
+                ]);
+                $this->logger->setProgress(100, 'done');
+            } catch (\Throwable $e) {
+                $this->logger->error('s3_upload_failed', [
+                    'message' => $e->getMessage(),
+                ]);
+                throw $e;
+            }
+        } else {
+            $this->logger->debug('s3_upload_skipped', ['reason' => 'option']);
+            $this->logger->setProgress(95, 'finalize');
         }
 
         // Retention policies could be applied here (list, prune)

@@ -64,6 +64,7 @@ class Uploader
                 'ETag' => $result['ETag'],
             ];
             $this->logger->info('upload_part', ['part' => $partNumber]);
+            $this->logger->setProgress((int) floor(80 + (15 * ($offset + $length) / max(1, $size))), 'upload');
             $partNumber++;
             $offset += $length;
         }

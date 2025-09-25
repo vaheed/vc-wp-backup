@@ -42,6 +42,31 @@ class Logger
     }
 
     /**
+     * Persist simple progress information for UI polling.
+     * @param int $percent 0-100
+     * @param string $stage
+     */
+    public function setProgress(int $percent, string $stage): void
+    {
+        $percent = max(0, min(100, $percent));
+        update_option('vcbk_progress', [
+            'percent' => $percent,
+            'stage' => $stage,
+            'ts' => gmdate('c'),
+        ], false);
+        $this->debug('progress', ['percent' => $percent, 'stage' => $stage]);
+    }
+
+    /**
+     * @return array{percent:int,stage:string,ts:string}|array{}
+     */
+    public function getProgress(): array
+    {
+        $p = get_option('vcbk_progress', []);
+        return is_array($p) ? $p : [];
+    }
+
+    /**
      * @param array<string, mixed> $context
      */
     private function write(string $level, string $event, array $context): void
@@ -75,7 +100,7 @@ class Logger
     /**
      * @return string[]
      */
-    public function tail(int $lines = 200): array
+    public function tail(int $lines = 500): array
     {
         if (!file_exists($this->logFile)) {
             return [];
