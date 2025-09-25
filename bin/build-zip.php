@@ -20,10 +20,26 @@ if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
 
 function addDir(ZipArchive $zip, string $dir, string $base, string $prefix): void {
     $iter = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+    $excludeFiles = [
+        // Dev/config files not needed at runtime
+        'composer.json',
+        'composer.lock',
+        'phpcs.xml',
+        'phpstan.neon',
+        'phpunit.xml.dist',
+        'README.md',
+        '.editorconfig',
+        '.gitattributes',
+        '.gitignore',
+    ];
     foreach ($iter as $file) {
         $path = (string) $file;
         // Exclude build/development-only directories
         if (preg_match('#/(dist|node_modules|\.git|\.github|tests|bin|tools)/#', $path)) {
+            continue;
+        }
+        $baseName = basename($path);
+        if (in_array($baseName, $excludeFiles, true)) {
             continue;
         }
         $rel = $prefix . ltrim(str_replace($base, '', $path), '/');
