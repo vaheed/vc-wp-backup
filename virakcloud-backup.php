@@ -73,8 +73,12 @@ add_action('plugins_loaded', function () {
 // Add helpful links on the plugins list row (Website & Documentation)
 add_filter('plugin_row_meta', function (array $links, string $file) {
     if ($file === plugin_basename(__FILE__)) {
-        $links[] = '<a href="https://virakcloud.com" target="_blank" rel="noopener noreferrer">' . esc_html__('Website', 'virakcloud-backup') . '</a>';
-        $links[] = '<a href="https://docs.virakcloud.com" target="_blank" rel="noopener noreferrer">' . esc_html__('Documentation', 'virakcloud-backup') . '</a>';
+        $links[] = '<a href="https://virakcloud.com" target="_blank" rel="noopener noreferrer">'
+            . esc_html__('Website', 'virakcloud-backup')
+            . '</a>';
+        $links[] = '<a href="https://docs.virakcloud.com" target="_blank" rel="noopener noreferrer">'
+            . esc_html__('Documentation', 'virakcloud-backup')
+            . '</a>';
     }
     return $links;
 }, 10, 2);

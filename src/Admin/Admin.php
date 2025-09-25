@@ -237,14 +237,20 @@ class Admin
         $tz = wp_timezone();
         $nextText = $nextTs ? wp_date('Y-m-d H:i', (int) $nextTs, $tz) : __('not scheduled', 'virakcloud-backup');
         echo '<div class="vcbk-card">';
-        echo '<p>' . esc_html__('Last backup:', 'virakcloud-backup') . ' ' . esc_html((string) $last) . '</p>';
+        $labelLast = esc_html__('Last backup:', 'virakcloud-backup');
+        $valLast = esc_html((string) $last);
+        echo '<p>' . $labelLast . ' ' . $valLast . '</p>';
         if ($lastUpload) {
-            echo '<p>' . esc_html__('Last S3 upload:', 'virakcloud-backup') . ' ' . esc_html((string) $lastUpload) . '</p>';
+            $labelLastS3 = esc_html__('Last S3 upload:', 'virakcloud-backup');
+            $valLastS3 = esc_html((string) $lastUpload);
+            echo '<p>' . $labelLastS3 . ' ' . $valLastS3 . '</p>';
         }
-        echo '<p>' . esc_html__('Next scheduled backup:', 'virakcloud-backup') . ' ' . esc_html($nextText) . '</p>';
-        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=vcbk-backups')) . '">'
-            . esc_html__('Open Backups', 'virakcloud-backup')
-            . '</a></p>';
+        $labelNext = esc_html__('Next scheduled backup:', 'virakcloud-backup');
+        $valNext = esc_html($nextText);
+        echo '<p>' . $labelNext . ' ' . $valNext . '</p>';
+        $backupsUrl = esc_url(admin_url('admin.php?page=vcbk-backups'));
+        $btn = esc_html__('Open Backups', 'virakcloud-backup');
+        echo '<p><a class="button button-primary" href="' . $backupsUrl . '">' . $btn . '</a></p>';
         echo '</div>';
 
         // Recent backups (from S3)
@@ -260,12 +266,16 @@ class Admin
                 if (!str_contains($key, 'backup-')) {
                     continue;
                 }
+                $modified = '';
+                if (isset($obj['LastModified']) && $obj['LastModified'] instanceof \DateTimeInterface) {
+                    $modified = $obj['LastModified']->format('c');
+                } elseif (isset($obj['LastModified'])) {
+                    $modified = (string) $obj['LastModified'];
+                }
                 $items[] = [
                     'key' => $key,
                     'size' => (int) $obj['Size'],
-                    'modified' => method_exists($obj['LastModified'] ?? null, 'format')
-                        ? (string) $obj['LastModified']->format('c')
-                        : '',
+                    'modified' => $modified,
                 ];
             }
             usort(
@@ -281,7 +291,7 @@ class Admin
                 echo '<ul>';
                 foreach ($items as $it) {
                     $key = $it['key'];
-                    $size = size_format((float) $it['size']);
+                    $size = size_format((int) $it['size']);
                     $restoreUrl = add_query_arg('key', rawurlencode($key), admin_url('admin.php?page=vcbk-restore'));
                     echo '<li>' . esc_html($key . ' (' . $size . ')') . ' — ';
                     echo '<a href="' . esc_url($restoreUrl) . '">' . esc_html__('Restore', 'virakcloud-backup') . '</a>';
@@ -300,13 +310,16 @@ class Admin
         $tz = wp_timezone();
         $now = new \DateTimeImmutable('now', $tz);
         $last = get_option('vcbk_last_backup');
-        $lastText = $last ? human_time_diff(strtotime((string) $last), time()) . ' ' . __('ago', 'virakcloud-backup') : __('never', 'virakcloud-backup');
+        $lastTs = is_string($last) ? strtotime($last) : false;
+        $lastText = $lastTs !== false
+            ? human_time_diff((int) $lastTs, time()) . ' ' . __('ago', 'virakcloud-backup')
+            : __('never', 'virakcloud-backup');
         $nextTs = wp_next_scheduled('vcbk_cron_run');
         $nextText = $nextTs ? wp_date('Y-m-d H:i', (int) $nextTs, $tz) : __('not scheduled', 'virakcloud-backup');
         $mem = ini_get('memory_limit');
         $maxExec = ini_get('max_execution_time');
         $free = function_exists('disk_free_space') ? @disk_free_space(WP_CONTENT_DIR) : null;
-        $freeText = $free !== false && $free !== null ? size_format((float) $free) : __('unknown', 'virakcloud-backup');
+        $freeText = $free !== false && $free !== null ? size_format((int) $free) : __('unknown', 'virakcloud-backup');
         $s3Ok = false;
         $s3Err = '';
         try {
