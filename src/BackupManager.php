@@ -1,0 +1,161 @@
+<?php
+namespace VirakCloud\Backup;
+
+use Ramsey\Uuid\Uuid;
+
+class BackupManager
+{
+    private Settings $settings;
+    private Logger $logger;
+
+    public function __construct(Settings $settings, Logger $logger)
+    {
+        $this->settings = $settings;
+        $this->logger = $logger;
+    }
+
+    public function run(string $type = 'full', array $options = []): array
+    {
+        if (!current_user_can('manage_options') && empty($options['schedule'])) {
+            throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
+        }
+        $cfg = $this->settings->get();
+        $upload = wp_get_upload_dir();
+        $work = trailingslashit($upload['basedir']) . 'virakcloud-backup/work';
+        $archives = trailingslashit($upload['basedir']) . 'virakcloud-backup/archives';
+        wp_mkdir_p($work);
+        wp_mkdir_p($archives);
+
+        $siteHash = md5(home_url());
+        $env = wp_get_environment_type();
+        $ts = gmdate('Y/m/d/His');
+        $keyPrefix = sprintf('site-%s/env-%s/%s/', $siteHash, $env, $ts);
+
+        $uuid = Uuid::uuid4()->toString();
+        $archiveName = 'backup-' . $uuid . '.' . ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
+        $archivePath = trailingslashit($archives) . $archiveName;
+
+        $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
+
+        // Prepare paths
+        $paths = $this->resolve_paths($type, $cfg);
+        $exclude = $cfg['backup']['exclude'] ?? [];
+
+        // DB dump if needed
+        $dbDumpPath = null;
+        if (in_array($type, ['full', 'db', 'incremental'], true)) {
+            $dbDumpPath = $this->dump_database($work);
+            if ($dbDumpPath) {
+                $paths[] = $dbDumpPath;
+            }
+        }
+
+        // Build archive
+        $arch = new ArchiveBuilder($this->logger);
+        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude);
+
+        // Generate manifest.json
+        $manifestArr = [
+            'version' => 1,
+            'site' => $siteHash,
+            'wp_version' => get_bloginfo('version'),
+            'db_version' => $GLOBALS['wp_db_version'] ?? null,
+            'type' => $type,
+            'time' => gmdate('c'),
+            'archive' => basename($archivePath),
+            'archive_sha256' => $manifest['sha256'],
+            'encryption' => $cfg['backup']['encryption'] ?? ['enabled' => false],
+        ];
+        $manifestJson = wp_json_encode($manifestArr, JSON_PRETTY_PRINT);
+        $manifestLocal = $archivePath . '.manifest.json';
+        file_put_contents($manifestLocal, $manifestJson);
+
+        // Upload to S3
+        $s3 = (new S3ClientFactory($this->settings))->create();
+        $bucket = $cfg['s3']['bucket'];
+        $uploader = new Uploader($s3, $bucket, $this->logger);
+
+        $keyArchive = $keyPrefix . $archiveName;
+        $keyManifest = $keyPrefix . 'manifest.json';
+        $uploader->upload_multipart($keyArchive, $archivePath);
+        $s3->putObject(['Bucket' => $bucket, 'Key' => $keyManifest, 'Body' => $manifestJson]);
+
+        // Retention policies could be applied here (list, prune)
+        $this->logger->info('backup_complete', ['archive' => $keyArchive]);
+        update_option('vcbk_last_backup', current_time('mysql'));
+
+        return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
+    }
+
+    private function resolve_paths(string $type, array $cfg): array
+    {
+        $root = ABSPATH;
+        $paths = [];
+        if ($type === 'db') {
+            return $paths; // DB dump handled separately
+        }
+        if ($type === 'files' || $type === 'incremental' || $type === 'full') {
+            foreach ($cfg['backup']['include'] as $rel) {
+                $abs = wp_normalize_path(trailingslashit($root) . ltrim($rel, '/'));
+                if (file_exists($abs)) {
+                    $paths[] = $abs;
+                }
+            }
+            if ($type === 'full') {
+                $extra = [
+                    ABSPATH . 'wp-config.php',
+                    WP_CONTENT_DIR . '/mu-plugins',
+                ];
+                foreach ($extra as $p) {
+                    if (file_exists($p)) {
+                        $paths[] = $p;
+                    }
+                }
+            }
+        }
+        return $paths;
+    }
+
+    private function dump_database(string $workDir): ?string
+    {
+        global $wpdb;
+        $file = trailingslashit($workDir) . 'db-' . gmdate('Ymd-His') . '.sql';
+        $fh = fopen($file, 'wb');
+        if (!$fh) {
+            return null;
+        }
+        fwrite($fh, "-- VirakCloud Backup SQL Export\nSET NAMES utf8mb4;\nSET foreign_key_checks = 0;\n");
+        $tables = $wpdb->get_col('SHOW TABLES');
+        foreach ($tables as $table) {
+            $create = $wpdb->get_row("SHOW CREATE TABLE `$table`", ARRAY_A);
+            fwrite($fh, "\nDROP TABLE IF EXISTS `$table`;\n" . $create['Create Table'] . ";\n\n");
+            $rows = $wpdb->get_results("SELECT * FROM `$table`", ARRAY_A);
+            foreach ($rows as $row) {
+                $vals = array_map([$this, 'sql_escape'], array_values($row));
+                $columns = array_map(fn($c) => "`$c`", array_keys($row));
+                $sql = sprintf(
+                    "INSERT INTO `%s` (%s) VALUES (%s);\n",
+                    $table,
+                    implode(', ', $columns),
+                    implode(', ', $vals)
+                );
+                fwrite($fh, $sql);
+            }
+        }
+        fwrite($fh, "SET foreign_key_checks = 1;\n");
+        fclose($fh);
+        return $file;
+    }
+
+    private function sql_escape($value): string
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+        return "'" . esc_sql((string) $value) . "'";
+    }
+}
+

@@ -1,0 +1,4 @@
+/* Minimal admin styles */
+.vcbk-progress { height: 12px; background: #e5e5e5; border-radius: 6px; overflow: hidden; }
+.vcbk-progress > span { display: block; height: 100%; background: #2271b1; width: 0; transition: width .3s ease; }
+
