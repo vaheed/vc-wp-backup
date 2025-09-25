@@ -24,6 +24,7 @@ class Plugin
         // Admin UI
         if (is_admin()) {
             (new Admin($this->settings, $this->scheduler, $this->logger))->hooks();
+            add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets']);
         }
 
         add_action('init', [$this, 'registerTextdomain']);
@@ -53,5 +54,28 @@ class Plugin
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function enqueueAdminAssets(): void
+    {
+        wp_register_style(
+            'vcbk-admin',
+            plugins_url('assets/css/admin.css', VCBK_PLUGIN_FILE),
+            [],
+            VCBK_VERSION
+        );
+        wp_enqueue_style('vcbk-admin');
+        wp_register_script(
+            'vcbk-ui',
+            plugins_url('assets/js/plugin-ui.js', VCBK_PLUGIN_FILE),
+            ['jquery'],
+            VCBK_VERSION,
+            true
+        );
+        wp_localize_script('vcbk-ui', 'VCBK', [
+            'ajax' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('vcbk_ui'),
+        ]);
+        wp_enqueue_script('vcbk-ui');
     }
 }

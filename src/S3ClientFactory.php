@@ -31,10 +31,11 @@ class S3ClientFactory
             // Fallback region for S3-compatible endpoints; AWS SDK requires a value.
             $region = 'us-east-1';
         }
+        $endpoint = rtrim((string) $s3['endpoint'], '/');
         $args = [
             'version' => 'latest',
             'region' => $region,
-            'endpoint' => (string) $s3['endpoint'],
+            'endpoint' => $endpoint,
             'use_path_style_endpoint' => (bool) $s3['path_style'],
             'credentials' => [
                 'key' => (string) $s3['access_key'],
@@ -47,7 +48,7 @@ class S3ClientFactory
         ];
         if ($this->logger) {
             $this->logger->debug('s3_client_create', [
-                'endpoint' => $args['endpoint'],
+                'endpoint' => $endpoint,
                 'region' => $args['region'],
                 'path_style' => $args['use_path_style_endpoint'],
                 'key_set' => $args['credentials']['key'] !== '',

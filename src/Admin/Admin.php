@@ -31,9 +31,12 @@ class Admin
         add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);
         add_action('admin_post_vcbk_run_backup', [$this, 'handleRunBackup']);
         add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
+        add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
+        add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
         add_action('admin_post_vcbk_wizard_next', [$this, 'handleWizardNext']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
+        add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
         add_action('admin_post_vcbk_wizard_next', [$this, 'handleWizardNext']);
     }
 
@@ -170,11 +173,70 @@ class Admin
         $client = (new S3ClientFactory($this->settings, $this->logger))->create();
         try {
             $client->headBucket(['Bucket' => $this->settings->get()['s3']['bucket']]);
+            $this->logger->info('s3_head_bucket_ok');
             $msg = __('S3 connection success!', 'virakcloud-backup');
             wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-settings')));
         } catch (\Throwable $e) {
+            $this->logger->error('s3_head_bucket_failed', ['message' => $e->getMessage()]);
             $msg = __('S3 connection failed: ', 'virakcloud-backup') . $e->getMessage();
             wp_safe_redirect(add_query_arg('error', rawurlencode($msg), admin_url('admin.php?page=vcbk-settings')));
+        }
+        exit;
+    }
+
+    public function handleRunTest(): void
+    {
+        check_admin_referer('vcbk_run_test');
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        try {
+            $upload = wp_get_upload_dir();
+            $work = trailingslashit($upload['basedir']) . 'virakcloud-backup/test';
+            wp_mkdir_p($work);
+            $start = microtime(true);
+            // Create small fixture
+            $dummy = $work . '/dummy.txt';
+            file_put_contents($dummy, str_repeat('x', 2048));
+            $export = $work . '/settings.json';
+            file_put_contents($export, wp_json_encode($this->settings->get()));
+            $archPath = $work . '/test-' . gmdate('Ymd-His') . '.zip';
+            $arch = new \ZipArchive();
+            $arch->open($archPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+            $arch->addFile($dummy, 'dummy.txt');
+            $arch->addFile($export, 'settings.json');
+            $arch->close();
+            $checksum = hash_file('sha256', $archPath);
+            $elapsed = microtime(true) - $start;
+            $size = filesize($archPath) ?: 1;
+            $throughput = $size / max(0.001, $elapsed);
+
+            // Upload to S3
+            $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $this->settings->get()['s3']['bucket'];
+            $key = 'vcbk-test/' . basename($archPath);
+            $s3->putObject(['Bucket' => $bucket, 'Key' => $key, 'Body' => fopen($archPath, 'rb')]);
+            $this->logger->info('test_backup_complete', [
+                'ms' => (int) round($elapsed * 1000),
+                'size' => $size,
+                'sha256' => $checksum,
+            ]);
+            update_option('vcbk_last_test', [
+                'latency_ms' => (int) round($elapsed * 1000),
+                'size' => $size,
+                'sha256' => $checksum,
+                'key' => $key,
+            ], false);
+            $msg = sprintf(
+                /* translators: 1: milliseconds 2: kib/s */
+                __('Test backup uploaded in %1$d ms (%.1f KiB/s).', 'virakcloud-backup'),
+                (int) round($elapsed * 1000),
+                $throughput / 1024
+            );
+            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-backups')));
+        } catch (\Throwable $e) {
+            $msg = __('Test backup failed: ', 'virakcloud-backup') . $e->getMessage();
+            wp_safe_redirect(add_query_arg('error', rawurlencode($msg), admin_url('admin.php?page=vcbk-backups')));
         }
         exit;
     }
@@ -188,6 +250,10 @@ class Admin
             . ' '
             . esc_html(get_option('vcbk_last_backup', '—'))
             . '</p>';
+        $lastUpload = get_option('vcbk_last_s3_upload');
+        if ($lastUpload) {
+            echo '<p>' . esc_html__('Last S3 upload:', 'virakcloud-backup') . ' ' . esc_html($lastUpload) . '</p>';
+        }
         $runUrl = wp_nonce_url(
             admin_url('admin-post.php?action=vcbk_run_backup'),
             'vcbk_run_backup'
@@ -202,6 +268,12 @@ class Admin
     {
         $cfg = $this->settings->get();
         echo '<div class="wrap"><h1>' . esc_html__('Settings', 'virakcloud-backup') . '</h1>';
+        if (!empty($_GET['message'])) {
+            echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
+        }
+        if (!empty($_GET['error'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
+        }
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('vcbk_save_settings');
         echo '<input type="hidden" name="action" value="vcbk_save_settings" />';
@@ -285,15 +357,24 @@ class Admin
             esc_html__('Run missed backups', 'virakcloud-backup')
         );
         echo '</td></tr>';
+        echo '<tr><th>' . esc_html__('Next run (preview)', 'virakcloud-backup') . '</th><td><em id="vcbk-next-run-preview"></em></td></tr>';
         echo '</table><p><button class="button button-primary">'
             . esc_html__('Save Schedule', 'virakcloud-backup')
             . '</button></p>';
+        echo '<p style="color:#555">' . esc_html__('Tip: Configure a real cron to call wp-cron.php every 5 minutes for reliability.', 'virakcloud-backup') . '</p>';
+        echo '<pre>*/5 * * * * wget -q -O - ' . esc_html(home_url('/wp-cron.php?doing_wp_cron')) . ' >/dev/null 2>&1</pre>';
         echo '</form></div>';
     }
 
     public function renderBackups(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Backups', 'virakcloud-backup') . '</h1>';
+        if (!empty($_GET['message'])) {
+            echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
+        }
+        if (!empty($_GET['error'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
+        }
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('vcbk_run_backup');
         echo '<input type="hidden" name="action" value="vcbk_run_backup" />';
@@ -305,40 +386,35 @@ class Admin
         echo '<label style="margin-left:10px"><input type="checkbox" name="upload_to_s3" /> ' . esc_html__('Upload to S3 after backup', 'virakcloud-backup') . '</label> ';
         echo '<button class="button button-primary">' . esc_html__('Run Backup', 'virakcloud-backup') . '</button>';
         echo '</form>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
+        wp_nonce_field('vcbk_run_test');
+        echo '<input type="hidden" name="action" value="vcbk_run_test" />';
+        echo '<button class="button">' . esc_html__('Run Test Backup', 'virakcloud-backup') . '</button>';
+        echo '</form>';
+        $test = get_option('vcbk_last_test');
+        if (is_array($test)) {
+            echo '<div class="vcbk-alert vcbk-ok">';
+            echo '<strong>' . esc_html__('Last Test Result', 'virakcloud-backup') . ':</strong> ';
+            printf(
+                esc_html__('Latency %d ms, size %d bytes, checksum %s', 'virakcloud-backup'),
+                (int) ($test['latency_ms'] ?? 0),
+                (int) ($test['size'] ?? 0),
+                esc_html((string) ($test['sha256'] ?? ''))
+            );
+            echo '</div>';
+        }
         // Progress + live logs
         echo '<h2>' . esc_html__('Progress', 'virakcloud-backup') . '</h2>';
-        echo '<div id="vcbk-progress" style="background:#eee;width:480px;height:16px;border-radius:8px;overflow:hidden;">
-                <div id="vcbk-progress-bar" style="height:100%;width:0;background:#2271b1;"></div>
-              </div>
-              <p id="vcbk-progress-stage" style="margin-top:6px;color:#555;"></p>';
+        echo '<div id="vcbk-progress" class="vcbk-progress"><div id="vcbk-progress-bar" class="vcbk-progress-bar"></div></div>';
+        echo '<p id="vcbk-progress-stage" style="margin-top:6px;color:#555;"></p>';
+        echo '<p>';
+        echo '<button class="button" id="vcbk-pause">' . esc_html__('Pause', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button" id="vcbk-resume">' . esc_html__('Resume', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button" id="vcbk-cancel">' . esc_html__('Cancel', 'virakcloud-backup') . '</button>';
+        echo '</p>';
         echo '<h2>' . esc_html__('Live Logs', 'virakcloud-backup') . '</h2>';
         echo '<p><button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button></p>';
-        echo '<pre id="vcbk-log" style="max-height:380px;overflow:auto;background:#111;color:#eee;padding:12px;"></pre>';
-        echo '<script>
-        (function(){
-            var running=false, timer=null;
-            function fetchLogs(){
-                fetch(ajaxurl+"?action=vcbk_tail_logs").then(r=>r.json()).then(function(j){
-                    if(Array.isArray(j.lines)){
-                        document.getElementById("vcbk-log").textContent=j.lines.join("\n");
-                    }
-                }).catch(()=>{});
-            }
-            function fetchProgress(){
-                fetch(ajaxurl+"?action=vcbk_progress").then(r=>r.json()).then(function(j){
-                    var p = j.percent||0; var stage=j.stage||"";
-                    document.getElementById("vcbk-progress-bar").style.width=p+"%";
-                    document.getElementById("vcbk-progress-stage").textContent=stage+" ("+p+"%)";
-                }).catch(()=>{});
-            }
-            function tick(){ fetchLogs(); fetchProgress(); }
-            document.getElementById("vcbk-toggle-autorefresh").addEventListener("click", function(){
-                running = !running;
-                this.textContent = running? "Stop Auto-Refresh" : "Start Auto-Refresh";
-                if(running){ tick(); timer=setInterval(tick, 2000);} else { clearInterval(timer);} 
-            });
-        })();
-        </script>';
+        echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
         echo '</div>';
     }
 
@@ -496,15 +572,44 @@ class Admin
     public function renderLogs(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Logs', 'virakcloud-backup') . '</h1>';
-        $lines = $this->logger->tail(500);
-        echo '<pre style="max-height:500px;overflow:auto;background:#111;color:#eee;padding:12px;">'
-            . esc_html(implode("\n", $lines))
-            . '</pre>';
+        $level = isset($_GET['level']) ? sanitize_text_field((string) $_GET['level']) : '';
+        echo '<form method="get" action="">';
+        echo '<input type="hidden" name="page" value="vcbk-logs" />';
+        echo '<label>' . esc_html__('Level', 'virakcloud-backup') . ' ';
+        echo '<select name="level">';
+        foreach (['', 'info', 'debug', 'error'] as $l) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($l), selected($level, $l, false), esc_html($l === '' ? __('All', 'virakcloud-backup') : $l));
+        }
+        echo '</select></label> ';
+        echo '<button class="button">' . esc_html__('Filter', 'virakcloud-backup') . '</button> ';
+        $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
+        echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
+        echo '</form>';
+        $lines = $this->logger->tailFiltered(500, $level ?: null);
+        echo '<pre class="vcbk-log">' . esc_html(implode("\n", $lines)) . '</pre>';
         echo '</div>';
+    }
+
+    public function handleDownloadLog(): void
+    {
+        check_admin_referer('vcbk_download_log');
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        $file = $this->logger->latestLogFile();
+        if (!$file) {
+            wp_die(__('No log file found', 'virakcloud-backup'));
+        }
+        header('Content-Type: text/plain');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . (string) filesize($file));
+        readfile($file);
+        exit;
     }
 
     public function ajaxTailLogs(): void
     {
+        check_ajax_referer('vcbk_ui');
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['error' => 'forbidden']);
         }
@@ -513,23 +618,32 @@ class Admin
 
     public function ajaxProgress(): void
     {
+        check_ajax_referer('vcbk_ui');
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['error' => 'forbidden']);
         }
         wp_send_json($this->logger->getProgress());
     }
 
+    public function ajaxJobControl(): void
+    {
+        check_ajax_referer('vcbk_ui');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['error' => 'forbidden']);
+        }
+        $cmd = isset($_POST['cmd']) ? sanitize_text_field((string) $_POST['cmd']) : '';
+        if (in_array($cmd, ['pause', 'cancel'], true)) {
+            update_option('vcbk_job_control', $cmd, false);
+            $this->logger->info('job_control', ['cmd' => $cmd]);
+        } elseif ($cmd === 'resume') {
+            delete_option('vcbk_job_control');
+            $this->logger->info('job_control', ['cmd' => 'resume']);
+        }
+        wp_send_json_success(['cmd' => $cmd]);
+    }
+
     public function renderStatus(): void
     {
-        echo '<div class="wrap"><h1>' . esc_html__('Status', 'virakcloud-backup') . '</h1>';
-        echo '<ul>';
-        echo '<li>' . esc_html__('PHP version: ', 'virakcloud-backup') . esc_html(PHP_VERSION) . '</li>';
-        echo '<li>' . esc_html__('Memory limit: ', 'virakcloud-backup') . esc_html(ini_get('memory_limit')) . '</li>';
-        echo '<li>'
-            . esc_html__('Max execution time: ', 'virakcloud-backup')
-            . esc_html((string) ini_get('max_execution_time'))
-            . '</li>';
-        echo '</ul>';
-        echo '</div>';
+        include VCBK_PLUGIN_DIR . 'views/health.php';
     }
 }

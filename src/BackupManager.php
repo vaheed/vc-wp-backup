@@ -43,7 +43,7 @@ class BackupManager
         $archivePath = trailingslashit($archives) . $archiveName;
 
         $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
-        $this->logger->setProgress(5, 'start');
+        $this->logger->setProgress(5, __('Queued', 'virakcloud-backup'));
 
         // Prepare paths
         $paths = $this->resolvePaths($type, $cfg);
@@ -53,26 +53,26 @@ class BackupManager
             'paths' => $paths,
             'exclude' => $exclude,
         ]);
-        $this->logger->setProgress(10, 'paths');
+        $this->logger->setProgress(10, __('Preparing', 'virakcloud-backup'));
 
         // DB dump if needed
         $dbDumpPath = null;
         if (in_array($type, ['full', 'db', 'incremental'], true)) {
             $this->logger->debug('db_dump_start');
-            $this->logger->setProgress(20, 'db-dump');
+            $this->logger->setProgress(20, __('Archiving DB', 'virakcloud-backup'));
             $dbDumpPath = $this->dumpDatabase($work);
             if ($dbDumpPath) {
                 $paths[] = $dbDumpPath;
             }
             $this->logger->debug('db_dump_complete', ['path' => $dbDumpPath]);
-            $this->logger->setProgress(35, 'db-done');
+            $this->logger->setProgress(35, __('Archiving Files', 'virakcloud-backup'));
         }
 
         // Build archive
         $arch = new ArchiveBuilder($this->logger);
-        $this->logger->setProgress(40, 'archive-start');
+        $this->logger->setProgress(40, __('Archiving Files', 'virakcloud-backup'));
         $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude);
-        $this->logger->setProgress(70, 'archive-done');
+        $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
 
         // Generate manifest.json
         $manifestArr = [
@@ -97,12 +97,12 @@ class BackupManager
         $keyManifest = $keyPrefix . 'manifest.json';
         if ($shouldUpload) {
             $this->logger->debug('s3_upload_init');
-            $this->logger->setProgress(80, 'upload-start');
+            $this->logger->setProgress(80, __('Uploading', 'virakcloud-backup'));
             $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
             $bucket = $cfg['s3']['bucket'];
             $uploader = new Uploader($s3, $bucket, $this->logger);
             try {
-                $uploader->uploadMultipart($keyArchive, $archivePath);
+                $uploader->uploadAuto($keyArchive, $archivePath);
                 $s3->putObject([
                     'Bucket' => $bucket,
                     'Key' => $keyManifest,
@@ -112,7 +112,12 @@ class BackupManager
                     'archive' => $keyArchive,
                     'manifest' => $keyManifest,
                 ]);
-                $this->logger->setProgress(100, 'done');
+                $this->logger->setProgress(95, __('Verifying', 'virakcloud-backup'));
+                // Very light verify: re-hash local archive matches manifest
+                $ok = hash_file('sha256', $archivePath) === ($manifest['sha256'] ?? '');
+                $this->logger->debug('verify', ['ok' => $ok]);
+                $this->logger->setProgress(100, $ok ? __('Complete', 'virakcloud-backup') : __('Finalizing', 'virakcloud-backup'));
+                update_option('vcbk_last_s3_upload', current_time('mysql'), false);
             } catch (\Throwable $e) {
                 $this->logger->error('s3_upload_failed', [
                     'message' => $e->getMessage(),
@@ -121,7 +126,7 @@ class BackupManager
             }
         } else {
             $this->logger->debug('s3_upload_skipped', ['reason' => 'option']);
-            $this->logger->setProgress(95, 'finalize');
+            $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         }
 
         // Retention policies could be applied here (list, prune)
@@ -129,6 +134,22 @@ class BackupManager
         update_option('vcbk_last_backup', current_time('mysql'));
 
         return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
+    }
+
+    private function checkControl(): void
+    {
+        $ctl = get_option('vcbk_job_control');
+        if ($ctl === 'cancel') {
+            $this->logger->info('job_cancelled');
+            delete_option('vcbk_job_control');
+            throw new \RuntimeException(__('Backup cancelled', 'virakcloud-backup'));
+        }
+        if ($ctl === 'pause') {
+            $this->logger->info('job_paused');
+            $this->logger->setProgress(50, __('Paused', 'virakcloud-backup'));
+            // Leave flag set so UI shows paused; abort gracefully
+            throw new \RuntimeException(__('Backup paused', 'virakcloud-backup'));
+        }
     }
 
     /**

@@ -1,4 +1,8 @@
-/* Minimal admin styles */
-.vcbk-progress { height: 12px; background: #e5e5e5; border-radius: 6px; overflow: hidden; }
-.vcbk-progress > span { display: block; height: 100%; background: #2271b1; width: 0; transition: width .3s ease; }
-
+.vcbk-alert{padding:10px;border-radius:4px;margin:10px 0}
+.vcbk-ok{background:#e7f5e7;color:#1e4620;border:1px solid #a3d7a3}
+.vcbk-warn{background:#fff8e1;color:#7a5d00;border:1px solid #ffe08a}
+.vcbk-err{background:#fdecea;color:#611a15;border:1px solid #f5c6cb}
+.vcbk-progress{background:#eee;width:480px;height:16px;border-radius:8px;overflow:hidden}
+.vcbk-progress-bar{height:100%;width:0;background:#2271b1;transition:width .3s ease}
+pre.vcbk-log{max-height:500px;overflow:auto;background:#111;color:#eee;padding:12px}
+@media(prefers-contrast: more){.vcbk-progress-bar{background:#005ea6}}

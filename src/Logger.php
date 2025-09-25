@@ -14,7 +14,7 @@ class Logger
         if (!is_dir($this->logDir)) {
             wp_mkdir_p($this->logDir);
         }
-        $this->logFile = $this->logDir . '/vcbk.log';
+        $this->logFile = $this->currentLogFile();
     }
 
     /**
@@ -46,15 +46,19 @@ class Logger
      * @param int $percent 0-100
      * @param string $stage
      */
-    public function setProgress(int $percent, string $stage): void
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public function setProgress(int $percent, string $stage, array $extra = []): void
     {
         $percent = max(0, min(100, $percent));
-        update_option('vcbk_progress', [
+        $payload = array_merge([
             'percent' => $percent,
             'stage' => $stage,
             'ts' => gmdate('c'),
-        ], false);
-        $this->debug('progress', ['percent' => $percent, 'stage' => $stage]);
+        ], $extra);
+        update_option('vcbk_progress', $payload, false);
+        $this->debug('progress', $payload);
     }
 
     /**
@@ -78,7 +82,9 @@ class Logger
             'context' => $this->scrub($context),
         ];
         $line = wp_json_encode($entry) . "\n";
-        file_put_contents($this->logFile, $line, FILE_APPEND | LOCK_EX);
+        $file = $this->currentLogFile();
+        $this->logFile = $file;
+        file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
     }
 
     /**
@@ -102,10 +108,56 @@ class Logger
      */
     public function tail(int $lines = 500): array
     {
-        if (!file_exists($this->logFile)) {
-            return [];
+        $file = $this->currentLogFile();
+        if (!file_exists($file)) {
+            $candidates = glob($this->logDir . '/vcbk-*.log');
+            if (!$candidates) {
+                return [];
+            }
+            rsort($candidates);
+            $file = $candidates[0];
         }
-        $data = file($this->logFile, FILE_IGNORE_NEW_LINES) ?: [];
+        $data = file($file, FILE_IGNORE_NEW_LINES) ?: [];
         return array_slice($data, -$lines);
     }
+
+    /**
+     * @param int $lines
+     * @param string|null $level One of info|debug|error
+     * @return string[]
+     */
+    public function tailFiltered(int $lines = 500, ?string $level = null): array
+    {
+        $rows = $this->tail(max($lines, 1));
+        if ($level === null || $level === '') {
+            return $rows;
+        }
+        $level = (string) $level;
+        $out = [];
+        foreach ($rows as $r) {
+            $j = json_decode($r, true);
+            if (is_array($j) && isset($j['level']) && $j['level'] === $level) {
+                $out[] = $r;
+            }
+        }
+        return $out;
+    }
 }
+    private function currentLogFile(): string
+    {
+        return $this->logDir . '/vcbk-' . gmdate('Y-m-d') . '.log';
+    }
+
+    public function latestLogFile(): ?string
+    {
+        $file = $this->currentLogFile();
+        if (file_exists($file)) {
+            return $file;
+        }
+        $candidates = glob($this->logDir . '/vcbk-*.log');
+        if (!$candidates) {
+            return null;
+        }
+        rsort($candidates);
+        return $candidates[0];
+    }

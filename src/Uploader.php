@@ -21,6 +21,26 @@ class Uploader
      * @param int $partSize Chunk size in bytes (min 1)
      * @return array{parts:int}
      */
+    /**
+     * Upload file choosing the optimal strategy.
+     * For small files (<= 5 MiB) use single putObject. Otherwise use multipart upload.
+     * @return array{parts:int}
+     */
+    public function uploadAuto(string $key, string $filePath, int $partSize = 134217728): array
+    {
+        $size = filesize($filePath) ?: 0;
+        if ($size <= 5 * 1024 * 1024) {
+            $this->logger->debug('upload_putobject', ['key' => $key, 'size' => $size]);
+            $this->client->putObject([
+                'Bucket' => $this->bucket,
+                'Key' => $key,
+                'Body' => fopen($filePath, 'rb'),
+            ]);
+            return ['parts' => 1];
+        }
+        return $this->uploadMultipart($key, $filePath, $partSize);
+    }
+
     public function uploadMultipart(string $key, string $filePath, int $partSize = 134217728): array
     {
         if ($partSize < 1) {
@@ -63,8 +83,13 @@ class Uploader
                 'PartNumber' => $partNumber,
                 'ETag' => $result['ETag'],
             ];
-            $this->logger->info('upload_part', ['part' => $partNumber]);
-            $this->logger->setProgress((int) floor(80 + (15 * ($offset + $length) / max(1, $size))), 'upload');
+            $processed = $offset + $length;
+            $this->logger->info('upload_part', ['part' => $partNumber, 'bytes' => $processed]);
+            $this->logger->setProgress(
+                (int) floor(80 + (15 * $processed / max(1, $size))),
+                'uploading',
+                ['bytesProcessed' => $processed, 'totalBytes' => $size]
+            );
             $partNumber++;
             $offset += $length;
         }
