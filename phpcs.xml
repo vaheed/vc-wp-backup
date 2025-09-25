@@ -21,8 +21,7 @@
     <!-- Relax strict spacing around parentheses in calls/declarations -->
     <exclude name="PEAR.Functions.FunctionCallSignature"/>
     <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
-    <!-- Allow short ternary operator -->
-    <exclude name="WordPress.PHP.DisallowShortTernary"/>
+    <!-- Allow short ternary operator (WPCS 3 no longer includes the old sniff) -->
   </rule>
 
   <!-- Paths to scan -->
