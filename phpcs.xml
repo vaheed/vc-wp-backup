@@ -13,4 +13,15 @@
   <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
   <exclude name="PSR2.Files.EndFileNewline"/>
   <exclude name="PSR12.Files.EndFileNewline"/>
+  <exclude name="Generic.Files.EndFileNewline"/>
+  <!-- Method naming: accept snake_case for WordPress-style methods -->
+  <exclude name="PSR1.Methods.CamelCapsMethodName"/>
+  <exclude name="Squiz.NamingConventions.ValidFunctionName"/>
+  <!-- Header spacing between blocks -->
+  <exclude name="PSR12.Files.FileHeader"/>
+  <!-- Allow inline control structures (common in some WP code paths) -->
+  <exclude name="Generic.ControlStructures.InlineControlStructure"/>
+  <!-- Brace placement flexibility -->
+  <exclude name="Squiz.WhiteSpace.ScopeOpeningBrace"/>
+  <exclude name="Squiz.WhiteSpace.ScopeClosingBrace"/>
 </ruleset>
