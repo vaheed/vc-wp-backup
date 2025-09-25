@@ -27,7 +27,13 @@ class Settings
                 'type' => 'full',
                 'include' => ['wp-content'],
                 // Exclude plugin's own working/archives directory to avoid recursive growth
-                'exclude' => ['cache', 'node_modules', 'uploads/virakcloud-backup', 'wp-content/uploads/virakcloud-backup', 'virakcloud-backup'],
+                'exclude' => [
+                    'cache',
+                    'node_modules',
+                    'uploads/virakcloud-backup',
+                    'wp-content/uploads/virakcloud-backup',
+                    'virakcloud-backup',
+                ],
                 'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
                 'encryption' => [
                     'enabled' => false,

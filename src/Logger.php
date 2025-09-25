@@ -142,7 +142,7 @@ class Logger
         }
         return $out;
     }
-}
+
     private function currentLogFile(): string
     {
         return $this->logDir . '/vcbk-' . gmdate('Y-m-d') . '.log';
@@ -161,3 +161,4 @@ class Logger
         rsort($candidates);
         return $candidates[0];
     }
+}
