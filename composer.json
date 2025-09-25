@@ -27,6 +27,11 @@
     "test": "phpunit --colors=always",
     "build-zip": "php -d phar.readonly=0 bin/build-zip.php"
   },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
   "extra": {
     "branch-alias": {
       "dev-main": "0.1.x-dev"
