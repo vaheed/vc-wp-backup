@@ -33,13 +33,12 @@ class BackupManager
         wp_mkdir_p($work);
         wp_mkdir_p($archives);
 
-        $siteHash = md5(home_url());
-        $env = wp_get_environment_type();
-        $ts = gmdate('Y/m/d/His');
-        $keyPrefix = sprintf('site-%s/env-%s/%s/', $siteHash, $env, $ts);
+        // Single S3 directory for all backups with datetime-based filenames
+        $keyPrefix = 'backups/';
 
         $uuid = Uuid::uuid4()->toString();
-        $archiveName = 'backup-' . $uuid . '.' . ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
+        $dateStamp = gmdate('Ymd-His');
+        $archiveName = 'backup-' . $dateStamp . '.' . ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
         $archivePath = trailingslashit($archives) . $archiveName;
 
         $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
@@ -80,7 +79,7 @@ class BackupManager
         // Generate manifest.json
         $manifestArr = [
             'version' => 1,
-            'site' => $siteHash,
+            'site' => md5(home_url()),
             'wp_version' => get_bloginfo('version'),
             'db_version' => $GLOBALS['wp_db_version'] ?? null,
             'type' => $type,
@@ -97,7 +96,7 @@ class BackupManager
         // Upload to S3
         $shouldUpload = !empty($options['schedule']) || !empty($options['upload']);
         $keyArchive = $keyPrefix . $archiveName;
-        $keyManifest = $keyPrefix . 'manifest.json';
+        $keyManifest = $keyPrefix . 'manifest-' . $dateStamp . '.json';
         if ($shouldUpload) {
             $this->logger->debug('s3_upload_init');
             $this->logger->setProgress(80, __('Uploading', 'virakcloud-backup'));
@@ -167,22 +166,26 @@ class BackupManager
         if ($type === 'db') {
             return $paths; // DB dump handled separately
         }
-        if ($type === 'files' || $type === 'incremental' || $type === 'full') {
+        if ($type === 'full') {
+            // Include the entire WordPress root for a true full-site migration
+            $paths[] = rtrim($root, '/');
+            // Fallback: some installs keep wp-config.php one level up
+            $configAbove = rtrim(dirname($root), '/') . '/wp-config.php';
+            if (file_exists($configAbove)) {
+                $paths[] = $configAbove;
+            }
+        } elseif ($type === 'files' || $type === 'incremental') {
             foreach ($cfg['backup']['include'] as $rel) {
                 $abs = wp_normalize_path(trailingslashit($root) . ltrim($rel, '/'));
                 if (file_exists($abs)) {
                     $paths[] = $abs;
                 }
             }
-            if ($type === 'full') {
-                $extra = [
-                    ABSPATH . 'wp-config.php',
-                    WP_CONTENT_DIR . '/mu-plugins',
-                ];
-                foreach ($extra as $p) {
-                    if (file_exists($p)) {
-                        $paths[] = $p;
-                    }
+            // Ensure critical config and mu-plugins are captured when not doing a full backup
+            $maybe = [ABSPATH . 'wp-config.php', WP_CONTENT_DIR . '/mu-plugins'];
+            foreach ($maybe as $p) {
+                if (file_exists($p)) {
+                    $paths[] = $p;
                 }
             }
         }

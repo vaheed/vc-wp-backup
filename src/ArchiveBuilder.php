@@ -146,8 +146,17 @@ class ArchiveBuilder
             if ($pattern === '') {
                 continue;
             }
-            if (fnmatch($pattern, $relativePath)) {
-                return true;
+            $pattern = (string) $pattern;
+            // If pattern looks like a glob or includes a slash, use fnmatch
+            if (strpbrk($pattern, "*/?[") !== false || strpos($pattern, '/') !== false || strpos($pattern, '\\') !== false) {
+                if (fnmatch($pattern, $relativePath)) {
+                    return true;
+                }
+            } else {
+                // Otherwise treat as a substring (directory or file name)
+                if (strpos($relativePath, $pattern) !== false) {
+                    return true;
+                }
             }
         }
         return false;

@@ -2,7 +2,10 @@
 .vcbk-ok{background:#e7f5e7;color:#1e4620;border:1px solid #a3d7a3}
 .vcbk-warn{background:#fff8e1;color:#7a5d00;border:1px solid #ffe08a}
 .vcbk-err{background:#fdecea;color:#611a15;border:1px solid #f5c6cb}
-.vcbk-progress{background:#eee;width:480px;height:16px;border-radius:8px;overflow:hidden}
+.vcbk-card{background:#fff;border:1px solid #ccd0d4;border-radius:6px;padding:16px;margin-top:12px;box-shadow:0 1px 1px rgba(0,0,0,.02)}
+.vcbk-muted{color:#555}
+.vcbk-actions .button{margin-right:6px}
+.vcbk-progress{background:#eee;width:100%;max-width:720px;height:16px;border-radius:8px;overflow:hidden}
 .vcbk-progress-bar{height:100%;width:0;background:#2271b1;transition:width .3s ease}
-pre.vcbk-log{max-height:500px;overflow:auto;background:#111;color:#eee;padding:12px}
+pre.vcbk-log{max-height:500px;overflow:auto;background:#0b0d0e;color:#eaeef3;padding:12px;border-radius:6px;border:1px solid #1f2326;font-size:12px;line-height:1.35}
 @media(prefers-contrast: more){.vcbk-progress-bar{background:#005ea6}}

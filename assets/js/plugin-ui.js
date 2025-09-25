@@ -1,19 +1,29 @@
 (function(){
   function q(sel){ return document.querySelector(sel); }
   function ajax(url){ return fetch(url, {credentials:'same-origin'}).then(function(r){return r.json();}); }
+  function copy(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text); return; }
+    var t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(t);
+  }
 
   function poll(){
     ajax(VCBK.ajax+"?action=vcbk_progress&_wpnonce="+VCBK.nonce).then(function(j){
       var p = j.percent||0; var stage=j.stage||''; var bar=q('#vcbk-progress-bar'); var txt=q('#vcbk-progress-stage');
       if(bar){ bar.style.width = p+'%'; }
-      if(txt){ txt.textContent = stage+' ('+p+'%)'; }
+      if(txt){ txt.textContent = (stage||'') + (stage?' ':'') + '('+p+'%)'; }
     }).catch(function(){});
     var levelSel = q('select[name="level"]');
     var level = levelSel ? levelSel.value : '';
     var url = VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce + (level?"&level="+encodeURIComponent(level):'');
     ajax(url).then(function(j){
       if(Array.isArray(j.lines)){
-        var el = q('#vcbk-log'); if(el){ el.textContent = j.lines.join('\n'); }
+        var el = q('#vcbk-log'); if(el){
+          var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
+          el.textContent = j.lines.join('\n');
+          if(atBottom && (!window.vcbkNoScroll)){
+            el.scrollTop = el.scrollHeight;
+          }
+        }
       }
     }).catch(function(){});
   }
@@ -53,6 +63,15 @@
       e.preventDefault();
       if(t.dataset.running==='1'){ window.clearInterval(window.vcbkTimer); t.dataset.running='0'; t.textContent='Start Auto-Refresh'; }
       else { poll(); window.vcbkTimer=setInterval(poll, 2500); t.dataset.running='1'; t.textContent='Stop Auto-Refresh'; }
+    }
+    if(t && t.matches('#vcbk-toggle-scroll')){
+      e.preventDefault();
+      window.vcbkNoScroll = !window.vcbkNoScroll;
+      t.textContent = window.vcbkNoScroll ? 'Start Auto-Scroll' : 'Stop Auto-Scroll';
+    }
+    if(t && t.matches('#vcbk-copy-log')){
+      e.preventDefault();
+      var el = q('#vcbk-log'); if(el){ copy(el.textContent||''); }
     }
     if(t && t.matches('#vcbk-pause,#vcbk-resume,#vcbk-cancel')){
       e.preventDefault();
