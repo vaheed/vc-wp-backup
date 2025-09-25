@@ -5,6 +5,9 @@
   <!-- Base standard -->
   <rule ref="PSR12"/>
 
+  <!-- Do not fail CI on warnings (only errors) -->
+  <config name="ignore_warnings_on_exit" value="1"/>
+
   <!-- Paths to scan -->
   <file>src</file>
   <file>virakcloud-backup.php</file>

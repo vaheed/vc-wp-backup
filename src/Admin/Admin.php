@@ -285,13 +285,12 @@ class Admin
     public function renderRestore(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
-        echo '<p>'
-            // phpcs:ignore Generic.Files.LineLength
-            . esc_html__(
-                'Select a restore point from your VirakCloud S3 bucket and start restore. Current site will be snapshotted for rollback.',
-                'virakcloud-backup'
-            )
-            . '</p>';
+        // phpcs:disable Generic.Files.LineLength
+        echo '<p>' . esc_html__(
+            'Select a restore point from your VirakCloud S3 bucket and start restore. Current site will be snapshotted for rollback.',
+            'virakcloud-backup'
+        ) . '</p>';
+        // phpcs:enable Generic.Files.LineLength
         echo '<p><em>' . esc_html__('Restore UI coming in subsequent iterations.', 'virakcloud-backup') . '</em></p>';
         echo '</div>';
     }
