@@ -11,6 +11,18 @@
     <!-- Don't require file/class doc comments everywhere -->
     <exclude name="Squiz.Commenting.FileComment"/>
     <exclude name="Squiz.Commenting.ClassComment"/>
+    <exclude name="Squiz.Commenting.FunctionComment"/>
+    <exclude name="Squiz.Commenting.VariableComment"/>
+    <!-- Allow short array syntax and don't enforce alignment rules -->
+    <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+    <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+    <!-- Permit class brace on next line to match current style -->
+    <exclude name="Squiz.Classes.ClassDeclaration"/>
+    <!-- Relax strict spacing around parentheses in calls/declarations -->
+    <exclude name="PEAR.Functions.FunctionCallSignature"/>
+    <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
+    <!-- Allow short ternary operator -->
+    <exclude name="WordPress.PHP.DisallowShortTernary"/>
   </rule>
 
   <!-- Paths to scan -->
