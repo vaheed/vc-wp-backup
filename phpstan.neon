@@ -5,4 +5,4 @@ parameters:
   bootstrapFiles:
     - tools/phpstan-bootstrap.php
     - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
-  checkGenericClassInNonGenericObjectType: false
+  # Removed deprecated option checkGenericClassInNonGenericObjectType

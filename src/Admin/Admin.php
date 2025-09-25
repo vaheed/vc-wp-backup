@@ -24,10 +24,8 @@ class Admin
 
     public function hooks(): void
     {
-        // Hint for static analysis: property is used via Plugin; reference it to avoid "written only".
-        if (false) {
-            $this->scheduler->registerIntervals([]);
-        }
+        // Hint for static analysis: read the property so it's not considered "write-only".
+        $_ = $this->scheduler;
         add_action('admin_menu', [$this, 'menu']);
         add_action('admin_init', [$this, 'registerSettings']);
         add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);

@@ -42,8 +42,13 @@ class Uploader
         $partNumber = 1;
         $offset = 0;
         while ($offset < $size) {
-            $length = min($partSize, $size - $offset);
-            $body = fread($fh, (int) $length);
+            $length = (int) min($partSize, $size - $offset);
+            if ($length <= 0) {
+                break;
+            }
+            /** @var positive-int $length */
+            $length = $length;
+            $body = fread($fh, $length);
             if ($body === false) {
                 throw new \RuntimeException('Read error during multipart upload');
             }

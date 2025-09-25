@@ -80,9 +80,6 @@ class RestoreManager
         // Very basic import; for production, split and run line by line or via mysqli::multi_query
         $queries = array_filter(array_map('trim', explode(";\n", $sql)));
         foreach ($queries as $q) {
-            if ($q === '') {
-                continue;
-            }
             $wpdb->query($q);
         }
     }

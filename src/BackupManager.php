@@ -143,7 +143,10 @@ class BackupManager
             $rows = $wpdb->get_results("SELECT * FROM `$table`", ARRAY_A);
             foreach ($rows as $row) {
                 $vals = array_map([$this, 'sqlEscape'], array_values($row));
-                $columns = array_map(static fn(string $c): string => "`$c`", array_keys($row));
+                $columns = array_map(
+                    static fn($c): string => '`' . (string) $c . '`',
+                    array_keys($row)
+                );
                 $sql = sprintf(
                     "INSERT INTO `%s` (%s) VALUES (%s);\n",
                     $table,
