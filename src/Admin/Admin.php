@@ -33,6 +33,7 @@ class Admin
         add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
         add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
         add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
+        add_action('admin_post_vcbk_run_restore', [$this, 'handleRunRestore']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
@@ -370,7 +371,7 @@ class Admin
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('vcbk_run_backup');
         echo '<input type="hidden" name="action" value="vcbk_run_backup" />';
-        echo '<label style="margin-right:8px">' . esc_html__('Mode', 'virakcloud-backup') . ' '; 
+        echo '<label style="margin-right:8px">' . esc_html__('Mode', 'virakcloud-backup') . ' ';
         echo '<select name="type">';
         foreach (['full', 'db', 'files', 'incremental'] as $t) {
             printf('<option value="%s">%s</option>', esc_attr($t), esc_html($t));
@@ -426,14 +427,86 @@ class Admin
     public function renderRestore(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
-        // phpcs:disable Generic.Files.LineLength
-        echo '<p>' . esc_html__(
-            'Select a restore point from your VirakCloud S3 bucket and start restore. Current site will be snapshotted for rollback.',
-            'virakcloud-backup'
-        ) . '</p>';
-        // phpcs:enable Generic.Files.LineLength
-        echo '<p><em>' . esc_html__('Restore UI coming in subsequent iterations.', 'virakcloud-backup') . '</em></p>';
+        echo '<div class="vcbk-card">';
+        echo '<p>' . esc_html__('Pick a backup from your VirakCloud S3 bucket. We will restore the database and wp-content files. This may overwrite existing data.', 'virakcloud-backup') . '</p>';
+        try {
+            $client = (new S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $this->settings->get()['s3']['bucket'];
+            $prefix = 'backups/';
+            $items = [];
+            $params = ['Bucket' => $bucket, 'Prefix' => $prefix, 'MaxKeys' => 1000];
+            do {
+                $res = $client->listObjectsV2($params);
+                foreach ((array) ($res['Contents'] ?? []) as $obj) {
+                    $key = (string) $obj['Key'];
+                    if (str_contains($key, 'backup-') && (str_ends_with($key, '.zip') || str_ends_with($key, '.tar.gz'))) {
+                        $items[] = [
+                            'key' => $key,
+                            'size' => (int) $obj['Size'],
+                            'modified' => (string) ($obj['LastModified']->format('c') ?? ''),
+                        ];
+                    }
+                }
+                $params['ContinuationToken'] = isset($res['IsTruncated']) && $res['IsTruncated'] ? $res['NextContinuationToken'] : null;
+            } while (!empty($params['ContinuationToken']));
+            usort($items, function ($a, $b) { return strcmp($b['key'], $a['key']); });
+
+            if (empty($items)) {
+                echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('No backups found in S3 prefix backups/.', 'virakcloud-backup') . '</p>';
+            } else {
+                echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+                wp_nonce_field('vcbk_run_restore');
+                echo '<input type="hidden" name="action" value="vcbk_run_restore" />';
+                echo '<label>' . esc_html__('Backup', 'virakcloud-backup') . ' ';
+                echo '<select name="key" class="regular-text" style="min-width:420px">';
+                foreach ($items as $it) {
+                    $label = $it['key'] . ' (' . size_format($it['size']) . ')';
+                    printf('<option value="%s">%s</option>', esc_attr($it['key']), esc_html($label));
+                }
+                echo '</select></label> ';
+                echo '<label style="margin-left:12px"><input type="checkbox" name="dry_run" /> ' . esc_html__('Dry Run (extract and validate only)', 'virakcloud-backup') . '</label> ';
+                echo '<button class="button button-primary" style="margin-left:12px">' . esc_html__('Start Restore', 'virakcloud-backup') . '</button>';
+                echo '</form>';
+            }
+        } catch (\Throwable $e) {
+            echo '<div class="notice notice-error"><p>' . esc_html($e->getMessage()) . '</p></div>';
+        }
         echo '</div>';
+
+        echo '<div class="vcbk-card">';
+        echo '<h2 style="margin-top:0">' . esc_html__('Progress', 'virakcloud-backup') . '</h2>';
+        echo '<div id="vcbk-progress" class="vcbk-progress"><div id="vcbk-progress-bar" class="vcbk-progress-bar"></div></div>';
+        echo '<p id="vcbk-progress-stage" class="vcbk-muted" style="margin-top:6px"></p>';
+        echo '<p class="vcbk-actions">';
+        echo '<button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button>';
+        echo '</p>';
+        echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    public function handleRunRestore(): void
+    {
+        check_admin_referer('vcbk_run_restore');
+        if (!current_user_can('update_core')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        $key = isset($_POST['key']) ? sanitize_text_field((string) $_POST['key']) : '';
+        $dry = !empty($_POST['dry_run']);
+        if ($key === '') {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing backup key', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
+            exit;
+        }
+        try {
+            $rm = new RestoreManager($this->settings, $this->logger);
+            $rm->restoreFromS3($key, ['dry_run' => $dry]);
+            $msg = $dry ? __('Dry run complete', 'virakcloud-backup') : __('Restore complete', 'virakcloud-backup');
+            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-restore')));
+        } catch (\Throwable $e) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-restore')));
+        }
+        exit;
     }
 
     public function renderMigrate(): void
