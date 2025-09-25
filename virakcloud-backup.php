@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: VirakCloud Backup & Migrate
- * Description: Backup, restore, and migrate WordPress to VirakCloud S3-compatible object storage. Manual and scheduled backups with integrity and retention.
+ * Description: Backup, restore, and migrate WordPress to VirakCloud S3-compatible storage with scheduled backups.
  * Version: 0.1.0
  * Author: VirakCloud
  * Text Domain: virakcloud-backup
@@ -41,7 +41,10 @@ function vcbk_admin_notice_missing_vendor()
     if (!current_user_can('activate_plugins')) {
         return;
     }
-    $msg = __('VirakCloud Backup requires Composer dependencies. Please run composer install inside the plugin folder.', 'virakcloud-backup');
+    $msg = __(
+        'VirakCloud Backup requires Composer dependencies. Please run composer install inside the plugin folder.',
+        'virakcloud-backup'
+    );
     echo '<div class="notice notice-warning"><p>' . esc_html($msg) . '</p></div>';
 }
 

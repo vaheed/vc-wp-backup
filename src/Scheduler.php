@@ -16,12 +16,30 @@ class Scheduler
 
     public function registerIntervals(array $schedules): array
     {
-        $schedules['2h'] = ['interval' => 2 * HOUR_IN_SECONDS, 'display' => __('Every 2 hours', 'virakcloud-backup')];
-        $schedules['4h'] = ['interval' => 4 * HOUR_IN_SECONDS, 'display' => __('Every 4 hours', 'virakcloud-backup')];
-        $schedules['8h'] = ['interval' => 8 * HOUR_IN_SECONDS, 'display' => __('Every 8 hours', 'virakcloud-backup')];
-        $schedules['12h'] = ['interval' => 12 * HOUR_IN_SECONDS, 'display' => __('Every 12 hours', 'virakcloud-backup')];
-        $schedules['fortnightly'] = ['interval' => 14 * DAY_IN_SECONDS, 'display' => __('Every 2 weeks', 'virakcloud-backup')];
-        $schedules['monthly'] = ['interval' => 30 * DAY_IN_SECONDS, 'display' => __('Every month', 'virakcloud-backup')];
+        $schedules['2h'] = [
+            'interval' => 2 * HOUR_IN_SECONDS,
+            'display' => __('Every 2 hours', 'virakcloud-backup'),
+        ];
+        $schedules['4h'] = [
+            'interval' => 4 * HOUR_IN_SECONDS,
+            'display' => __('Every 4 hours', 'virakcloud-backup'),
+        ];
+        $schedules['8h'] = [
+            'interval' => 8 * HOUR_IN_SECONDS,
+            'display' => __('Every 8 hours', 'virakcloud-backup'),
+        ];
+        $schedules['12h'] = [
+            'interval' => 12 * HOUR_IN_SECONDS,
+            'display' => __('Every 12 hours', 'virakcloud-backup'),
+        ];
+        $schedules['fortnightly'] = [
+            'interval' => 14 * DAY_IN_SECONDS,
+            'display' => __('Every 2 weeks', 'virakcloud-backup'),
+        ];
+        $schedules['monthly'] = [
+            'interval' => 30 * DAY_IN_SECONDS,
+            'display' => __('Every month', 'virakcloud-backup'),
+        ];
         return $schedules;
     }
 

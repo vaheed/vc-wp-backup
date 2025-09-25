@@ -25,7 +25,12 @@ class MigrationManager
             });
             foreach ($textCols as $col) {
                 $name = $col['Field'];
-                $rows = $wpdb->get_results("SELECT `{$name}`, `{$name}` as _orig, `{$name}` as _pk FROM `$table`", ARRAY_A);
+                $sql = sprintf(
+                    'SELECT `%1$s`, `%1$s` as _orig, `%1$s` as _pk FROM `%2$s`',
+                    $name,
+                    $table
+                );
+                $rows = $wpdb->get_results($sql, ARRAY_A);
                 foreach ($rows as $row) {
                     $val = $row[$name];
                     $new = $this->replaceMaybeSerialized($val, $from, $to);

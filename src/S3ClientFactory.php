@@ -16,7 +16,12 @@ class S3ClientFactory
     public function create(): S3Client
     {
         if (!class_exists(S3Client::class)) {
-            throw new \RuntimeException(__('Composer dependencies missing (aws/aws-sdk-php). Please run composer install.', 'virakcloud-backup'));
+            throw new \RuntimeException(
+                __(
+                    'Composer dependencies missing (aws/aws-sdk-php). Please run composer install.',
+                    'virakcloud-backup'
+                )
+            );
         }
         $s3 = $this->settings->get()['s3'];
         $args = [

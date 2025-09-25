@@ -10,6 +10,10 @@
   <file>virakcloud-backup.php</file>
 
   <!-- Relax a few noisy sniffs for this project -->
+  <!-- Allow bootstrap file to have side effects (WordPress plugin entry point) -->
+  <rule ref="PSR1.Files.SideEffects">
+    <exclude-pattern>virakcloud-backup.php</exclude-pattern>
+  </rule>
   <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
   <exclude name="PSR2.Files.EndFileNewline"/>
   <exclude name="PSR12.Files.EndFileNewline"/>

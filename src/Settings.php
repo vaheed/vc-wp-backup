@@ -10,7 +10,9 @@ class Settings
     {
         $defaults = [
             's3' => [
-                'endpoint' => defined('VCBK_S3_ENDPOINT') ? (string) constant('VCBK_S3_ENDPOINT') : 'https://s3.virakcloud.com',
+                'endpoint' => defined('VCBK_S3_ENDPOINT')
+                    ? (string) constant('VCBK_S3_ENDPOINT')
+                    : 'https://s3.virakcloud.com',
                 'region' => getenv('VCBK_S3_REGION') ?: '',
                 'bucket' => getenv('VCBK_S3_BUCKET') ?: '',
                 'access_key' => getenv('VCBK_S3_KEY') ?: '',
@@ -23,8 +25,16 @@ class Settings
                 'include' => ['wp-content'],
                 'exclude' => ['cache', 'node_modules'],
                 'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
-                'encryption' => ['enabled' => false, 'cipher' => 'AES-256-GCM'],
-                'retention' => ['keep_last' => 10, 'days' => 30, 'keep_weekly' => 8, 'keep_monthly' => 12],
+                'encryption' => [
+                    'enabled' => false,
+                    'cipher' => 'AES-256-GCM',
+                ],
+                'retention' => [
+                    'keep_last' => 10,
+                    'days' => 30,
+                    'keep_weekly' => 8,
+                    'keep_monthly' => 12,
+                ],
             ],
             'schedule' => [
                 'interval' => 'weekly',
