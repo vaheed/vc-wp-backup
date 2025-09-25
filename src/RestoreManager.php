@@ -15,6 +15,8 @@ class RestoreManager
 
     /**
      * Download an archive from S3 and restore it locally.
+     *
+     * @param array<string, mixed> $options
      */
     public function restoreFromS3(string $key, array $options = []): void
     {
