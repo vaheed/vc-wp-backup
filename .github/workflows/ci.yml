@@ -27,3 +27,9 @@ jobs:
         run: composer test
       - name: Build Zip
         run: composer build-zip
+      - name: Upload Plugin Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: virakcloud-backup
+          path: dist/virakcloud-backup.zip
+          if-no-files-found: error
