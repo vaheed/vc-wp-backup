@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class RestoreManager
@@ -12,7 +13,7 @@ class RestoreManager
         $this->logger = $logger;
     }
 
-    public function restore_local(string $archivePath, array $options = []): void
+    public function restoreLocal(string $archivePath, array $options = []): void
     {
         if (!current_user_can('update_core')) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
@@ -54,17 +55,17 @@ class RestoreManager
         // Import DB if present
         $sqlFiles = glob($tmpDir . '/*.sql');
         if ($sqlFiles) {
-            $this->import_database($sqlFiles[0]);
+            $this->importDatabase($sqlFiles[0]);
         }
 
         // Copy files over cautiously
         $content = WP_CONTENT_DIR;
-        $this->recurse_copy($tmpDir . '/wp-content', $content);
+        $this->recurseCopy($tmpDir . '/wp-content', $content);
 
         $this->logger->info('restore_complete');
     }
 
-    private function import_database(string $sqlFile): void
+    private function importDatabase(string $sqlFile): void
     {
         global $wpdb;
         $sql = file_get_contents($sqlFile);
@@ -74,12 +75,14 @@ class RestoreManager
         // Very basic import; for production, split and run line by line or via mysqli::multi_query
         $queries = array_filter(array_map('trim', explode(";\n", $sql)));
         foreach ($queries as $q) {
-            if ($q === '') { continue; }
+            if ($q === '') {
+                continue;
+            }
             $wpdb->query($q);
         }
     }
 
-    private function recurse_copy(string $src, string $dst): void
+    private function recurseCopy(string $src, string $dst): void
     {
         if (!file_exists($src)) {
             return;
@@ -87,11 +90,13 @@ class RestoreManager
         $dir = opendir($src);
         @mkdir($dst, 0755, true);
         while (false !== ($file = readdir($dir))) {
-            if ($file === '.' || $file === '..') continue;
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
             $srcPath = $src . '/' . $file;
             $dstPath = $dst . '/' . $file;
             if (is_dir($srcPath)) {
-                $this->recurse_copy($srcPath, $dstPath);
+                $this->recurseCopy($srcPath, $dstPath);
             } else {
                 copy($srcPath, $dstPath);
             }
@@ -99,4 +104,3 @@ class RestoreManager
         closedir($dir);
     }
 }
-

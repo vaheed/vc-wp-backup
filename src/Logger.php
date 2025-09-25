@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class Logger
@@ -64,4 +65,3 @@ class Logger
         return array_slice($data, -$lines);
     }
 }
-

@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 use Ramsey\Uuid\Uuid;
@@ -38,13 +39,13 @@ class BackupManager
         $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
 
         // Prepare paths
-        $paths = $this->resolve_paths($type, $cfg);
+        $paths = $this->resolvePaths($type, $cfg);
         $exclude = $cfg['backup']['exclude'] ?? [];
 
         // DB dump if needed
         $dbDumpPath = null;
         if (in_array($type, ['full', 'db', 'incremental'], true)) {
-            $dbDumpPath = $this->dump_database($work);
+            $dbDumpPath = $this->dumpDatabase($work);
             if ($dbDumpPath) {
                 $paths[] = $dbDumpPath;
             }
@@ -77,7 +78,7 @@ class BackupManager
 
         $keyArchive = $keyPrefix . $archiveName;
         $keyManifest = $keyPrefix . 'manifest.json';
-        $uploader->upload_multipart($keyArchive, $archivePath);
+        $uploader->uploadMultipart($keyArchive, $archivePath);
         $s3->putObject(['Bucket' => $bucket, 'Key' => $keyManifest, 'Body' => $manifestJson]);
 
         // Retention policies could be applied here (list, prune)
@@ -87,7 +88,7 @@ class BackupManager
         return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
     }
 
-    private function resolve_paths(string $type, array $cfg): array
+    private function resolvePaths(string $type, array $cfg): array
     {
         $root = ABSPATH;
         $paths = [];
@@ -116,7 +117,7 @@ class BackupManager
         return $paths;
     }
 
-    private function dump_database(string $workDir): ?string
+    private function dumpDatabase(string $workDir): ?string
     {
         global $wpdb;
         $file = trailingslashit($workDir) . 'db-' . gmdate('Ymd-His') . '.sql';
@@ -131,7 +132,7 @@ class BackupManager
             fwrite($fh, "\nDROP TABLE IF EXISTS `$table`;\n" . $create['Create Table'] . ";\n\n");
             $rows = $wpdb->get_results("SELECT * FROM `$table`", ARRAY_A);
             foreach ($rows as $row) {
-                $vals = array_map([$this, 'sql_escape'], array_values($row));
+                $vals = array_map([$this, 'sqlEscape'], array_values($row));
                 $columns = array_map(fn($c) => "`$c`", array_keys($row));
                 $sql = sprintf(
                     "INSERT INTO `%s` (%s) VALUES (%s);\n",
@@ -147,7 +148,7 @@ class BackupManager
         return $file;
     }
 
-    private function sql_escape($value): string
+    private function sqlEscape($value): string
     {
         if ($value === null) {
             return 'NULL';
@@ -158,4 +159,3 @@ class BackupManager
         return "'" . esc_sql((string) $value) . "'";
     }
 }
-

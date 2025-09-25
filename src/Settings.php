@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class Settings
@@ -46,7 +47,7 @@ class Settings
         update_option($this->option, $config, false);
     }
 
-    public function sanitize_from_post(array $data): array
+    public function sanitizeFromPost(array $data): array
     {
         $cfg = $this->get();
         if (isset($data['s3']) && is_array($data['s3'])) {
@@ -60,13 +61,16 @@ class Settings
             $cfg['s3']['path_style'] = !empty($data['s3']['path_style']);
         }
         if (isset($data['schedule']) && is_array($data['schedule'])) {
-            $cfg['schedule']['interval'] = in_array($data['schedule']['interval'], ['2h','4h','8h','12h','daily','weekly','fortnightly','monthly'], true)
-                ? $data['schedule']['interval'] : 'weekly';
+            $cfg['schedule']['interval'] = in_array(
+                $data['schedule']['interval'],
+                ['2h', '4h', '8h', '12h', 'daily', 'weekly', 'fortnightly', 'monthly'],
+                true
+            ) ? $data['schedule']['interval'] : 'weekly';
             $cfg['schedule']['start_time'] = preg_match('/^\d{2}:\d{2}$/', (string) $data['schedule']['start_time'])
-                ? (string) $data['schedule']['start_time'] : '01:30';
+                ? (string) $data['schedule']['start_time']
+                : '01:30';
             $cfg['schedule']['catchup'] = !empty($data['schedule']['catchup']);
         }
         return $cfg;
     }
 }
-

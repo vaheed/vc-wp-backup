@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class MigrationManager
@@ -13,7 +14,7 @@ class MigrationManager
     /**
      * Perform a safe search/replace across the DB, handling serialized data.
      */
-    public function search_replace(string $from, string $to): void
+    public function searchReplace(string $from, string $to): void
     {
         global $wpdb;
         $tables = $wpdb->get_col('SHOW TABLES');
@@ -27,7 +28,7 @@ class MigrationManager
                 $rows = $wpdb->get_results("SELECT `{$name}`, `{$name}` as _orig, `{$name}` as _pk FROM `$table`", ARRAY_A);
                 foreach ($rows as $row) {
                     $val = $row[$name];
-                    $new = $this->replace_maybe_serialized($val, $from, $to);
+                    $new = $this->replaceMaybeSerialized($val, $from, $to);
                     if ($new !== $val) {
                         $wpdb->update($table, [$name => $new], [$name => $val]);
                     }
@@ -37,12 +38,12 @@ class MigrationManager
         $this->logger->info('migrate_replace_done', ['from' => $from, 'to' => $to]);
     }
 
-    private function replace_maybe_serialized($data, string $from, string $to)
+    private function replaceMaybeSerialized($data, string $from, string $to)
     {
         if (is_serialized($data)) {
             $un = @unserialize((string) $data);
             if ($un !== false || $data === 'b:0;') {
-                $replaced = $this->deep_replace($un, $from, $to);
+                $replaced = $this->deepReplace($un, $from, $to);
                 return serialize($replaced);
             }
         }
@@ -52,17 +53,17 @@ class MigrationManager
         return $data;
     }
 
-    private function deep_replace($value, string $from, string $to)
+    private function deepReplace($value, string $from, string $to)
     {
         if (is_array($value)) {
             foreach ($value as $k => $v) {
-                $value[$k] = $this->deep_replace($v, $from, $to);
+                $value[$k] = $this->deepReplace($v, $from, $to);
             }
             return $value;
         }
         if (is_object($value)) {
             foreach ($value as $k => $v) {
-                $value->{$k} = $this->deep_replace($v, $from, $to);
+                $value->{$k} = $this->deepReplace($v, $from, $to);
             }
             return $value;
         }
@@ -72,4 +73,3 @@ class MigrationManager
         return $value;
     }
 }
-

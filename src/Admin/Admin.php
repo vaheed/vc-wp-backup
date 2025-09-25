@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup\Admin;
 
 use VirakCloud\Backup\Logger;
@@ -24,10 +25,10 @@ class Admin
     public function hooks(): void
     {
         add_action('admin_menu', [$this, 'menu']);
-        add_action('admin_init', [$this, 'register_settings']);
-        add_action('admin_post_vcbk_save_settings', [$this, 'handle_save_settings']);
-        add_action('admin_post_vcbk_run_backup', [$this, 'handle_run_backup']);
-        add_action('admin_post_vcbk_test_s3', [$this, 'handle_test_s3']);
+        add_action('admin_init', [$this, 'registerSettings']);
+        add_action('admin_post_vcbk_save_settings', [$this, 'handleSaveSettings']);
+        add_action('admin_post_vcbk_run_backup', [$this, 'handleRunBackup']);
+        add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
     }
 
     public function menu(): void
@@ -37,37 +38,37 @@ class Admin
             __('VirakCloud Backup', 'virakcloud-backup'),
             'manage_options',
             'vcbk',
-            [$this, 'render_dashboard'],
+            [$this, 'renderDashboard'],
             'dashicons-cloud'
         );
-        add_submenu_page('vcbk', __('Settings', 'virakcloud-backup'), __('Settings', 'virakcloud-backup'), 'manage_options', 'vcbk-settings', [$this, 'render_settings']);
-        add_submenu_page('vcbk', __('Schedules', 'virakcloud-backup'), __('Schedules', 'virakcloud-backup'), 'manage_options', 'vcbk-schedules', [$this, 'render_schedules']);
-        add_submenu_page('vcbk', __('Backups', 'virakcloud-backup'), __('Backups', 'virakcloud-backup'), 'manage_options', 'vcbk-backups', [$this, 'render_backups']);
-        add_submenu_page('vcbk', __('Restore', 'virakcloud-backup'), __('Restore', 'virakcloud-backup'), 'update_core', 'vcbk-restore', [$this, 'render_restore']);
-        add_submenu_page('vcbk', __('Migrate', 'virakcloud-backup'), __('Migrate', 'virakcloud-backup'), 'update_core', 'vcbk-migrate', [$this, 'render_migrate']);
-        add_submenu_page('vcbk', __('Logs', 'virakcloud-backup'), __('Logs', 'virakcloud-backup'), 'manage_options', 'vcbk-logs', [$this, 'render_logs']);
-        add_submenu_page('vcbk', __('Status', 'virakcloud-backup'), __('Status', 'virakcloud-backup'), 'manage_options', 'vcbk-status', [$this, 'render_status']);
+        add_submenu_page('vcbk', __('Settings', 'virakcloud-backup'), __('Settings', 'virakcloud-backup'), 'manage_options', 'vcbk-settings', [$this, 'renderSettings']);
+        add_submenu_page('vcbk', __('Schedules', 'virakcloud-backup'), __('Schedules', 'virakcloud-backup'), 'manage_options', 'vcbk-schedules', [$this, 'renderSchedules']);
+        add_submenu_page('vcbk', __('Backups', 'virakcloud-backup'), __('Backups', 'virakcloud-backup'), 'manage_options', 'vcbk-backups', [$this, 'renderBackups']);
+        add_submenu_page('vcbk', __('Restore', 'virakcloud-backup'), __('Restore', 'virakcloud-backup'), 'update_core', 'vcbk-restore', [$this, 'renderRestore']);
+        add_submenu_page('vcbk', __('Migrate', 'virakcloud-backup'), __('Migrate', 'virakcloud-backup'), 'update_core', 'vcbk-migrate', [$this, 'renderMigrate']);
+        add_submenu_page('vcbk', __('Logs', 'virakcloud-backup'), __('Logs', 'virakcloud-backup'), 'manage_options', 'vcbk-logs', [$this, 'renderLogs']);
+        add_submenu_page('vcbk', __('Status', 'virakcloud-backup'), __('Status', 'virakcloud-backup'), 'manage_options', 'vcbk-status', [$this, 'renderStatus']);
     }
 
-    public function register_settings(): void
+    public function registerSettings(): void
     {
         register_setting('vcbk', 'vcbk_settings');
     }
 
-    public function handle_save_settings(): void
+    public function handleSaveSettings(): void
     {
         check_admin_referer('vcbk_save_settings');
         if (!current_user_can('manage_options')) {
             wp_die(__('Insufficient permissions', 'virakcloud-backup'));
         }
         $data = wp_unslash($_POST);
-        $config = $this->settings->sanitize_from_post($data);
+        $config = $this->settings->sanitizeFromPost($data);
         $this->settings->set($config);
         wp_safe_redirect(add_query_arg('updated', '1', wp_get_referer() ?: admin_url('admin.php?page=vcbk-settings')));
         exit;
     }
 
-    public function handle_run_backup(): void
+    public function handleRunBackup(): void
     {
         check_admin_referer('vcbk_run_backup');
         if (!current_user_can('manage_options')) {
@@ -86,7 +87,7 @@ class Admin
         exit;
     }
 
-    public function handle_test_s3(): void
+    public function handleTestS3(): void
     {
         check_admin_referer('vcbk_test_s3');
         if (!current_user_can('manage_options')) {
@@ -104,7 +105,7 @@ class Admin
         exit;
     }
 
-    public function render_dashboard(): void
+    public function renderDashboard(): void
     {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('VirakCloud Backup', 'virakcloud-backup') . '</h1>';
@@ -113,7 +114,7 @@ class Admin
         echo '</div>';
     }
 
-    public function render_settings(): void
+    public function renderSettings(): void
     {
         $cfg = $this->settings->get();
         echo '<div class="wrap"><h1>' . esc_html__('Settings', 'virakcloud-backup') . '</h1>';
@@ -146,7 +147,7 @@ class Admin
         echo '</form></div>';
     }
 
-    public function render_schedules(): void
+    public function renderSchedules(): void
     {
         $cfg = $this->settings->get();
         $schedule = $cfg['schedule'];
@@ -171,7 +172,7 @@ class Admin
         echo '</form></div>';
     }
 
-    public function render_backups(): void
+    public function renderBackups(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Backups', 'virakcloud-backup') . '</h1>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
@@ -187,7 +188,7 @@ class Admin
         echo '</div>';
     }
 
-    public function render_restore(): void
+    public function renderRestore(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
         echo '<p>' . esc_html__('Select a restore point from your VirakCloud S3 bucket and start restore. Current site will be snapshotted for rollback.', 'virakcloud-backup') . '</p>';
@@ -195,7 +196,7 @@ class Admin
         echo '</div>';
     }
 
-    public function render_migrate(): void
+    public function renderMigrate(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Migrate', 'virakcloud-backup') . '</h1>';
         echo '<p>' . esc_html__('Move this site to another domain. We will update URLs even inside serialized data.', 'virakcloud-backup') . '</p>';
@@ -203,7 +204,7 @@ class Admin
         echo '</div>';
     }
 
-    public function render_logs(): void
+    public function renderLogs(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Logs', 'virakcloud-backup') . '</h1>';
         $lines = $this->logger->tail(200);
@@ -211,7 +212,7 @@ class Admin
         echo '</div>';
     }
 
-    public function render_status(): void
+    public function renderStatus(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Status', 'virakcloud-backup') . '</h1>';
         echo '<ul>';
@@ -222,4 +223,3 @@ class Admin
         echo '</div>';
     }
 }
-

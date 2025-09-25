@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 use Aws\S3\S3Client;
@@ -35,4 +36,3 @@ class S3ClientFactory
         return new S3Client($args);
     }
 }
-

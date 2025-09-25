@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 use VirakCloud\Backup\Admin\Admin;
@@ -25,20 +26,20 @@ class Plugin
             (new Admin($this->settings, $this->scheduler, $this->logger))->hooks();
         }
 
-        add_action('init', [$this, 'register_textdomain']);
-        add_action('cron_schedules', [$this->scheduler, 'register_intervals']);
-        add_action('vcbk_cron_run', [$this, 'run_scheduled_backup']);
-        add_action('vcbk_cron_health', [$this->health, 'cron_health']);
+        add_action('init', [$this, 'registerTextdomain']);
+        add_action('cron_schedules', [$this->scheduler, 'registerIntervals']);
+        add_action('vcbk_cron_run', [$this, 'runScheduledBackup']);
+        add_action('vcbk_cron_health', [$this->health, 'cronHealth']);
 
         // Register REST endpoints for progress/log tail in a future iteration.
     }
 
-    public function register_textdomain(): void
+    public function registerTextdomain(): void
     {
         // Already loaded from main file; kept for safety
     }
 
-    public function run_scheduled_backup(): void
+    public function runScheduledBackup(): void
     {
         $config = $this->settings->get();
         $bm = new BackupManager($this->settings, $this->logger);
@@ -54,4 +55,3 @@ class Plugin
         }
     }
 }
-

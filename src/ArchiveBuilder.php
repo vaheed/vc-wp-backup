@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class ArchiveBuilder
@@ -103,4 +104,3 @@ class ArchiveBuilder
         return false;
     }
 }
-

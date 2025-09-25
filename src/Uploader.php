@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 use Aws\S3\S3Client;
@@ -16,7 +17,7 @@ class Uploader
         $this->logger = $logger;
     }
 
-    public function upload_multipart(string $key, string $filePath, int $partSize = 134217728): array
+    public function uploadMultipart(string $key, string $filePath, int $partSize = 134217728): array
     {
         $size = filesize($filePath);
         $this->logger->info('upload_start', ['key' => $key, 'size' => $size]);
@@ -63,4 +64,3 @@ class Uploader
         return ['parts' => count($parts)];
     }
 }
-

@@ -1,7 +1,8 @@
 <?php
+
 namespace VirakCloud\Backup;
 
-use WP_CLI; 
+use WP_CLI;
 
 class CliCommands
 {
@@ -60,7 +61,7 @@ class CliCommands
         $settings = new Settings();
         $logger = new Logger();
         $rm = new RestoreManager($settings, $logger);
-        $rm->restore_local($file, ['dry_run' => !empty($assoc['dry-run'])]);
+        $rm->restoreLocal($file, ['dry_run' => !empty($assoc['dry-run'])]);
         WP_CLI::success('Restore process completed');
     }
 
@@ -73,8 +74,7 @@ class CliCommands
             return;
         }
         $mm = new MigrationManager(new Logger());
-        $mm->search_replace($from, $to);
+        $mm->searchReplace($from, $to);
         WP_CLI::success('Migration search/replace complete');
     }
 }
-

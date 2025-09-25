@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class Scheduler
@@ -13,7 +14,7 @@ class Scheduler
         add_action('update_option_vcbk_settings', [$this, 'reschedule'], 10, 3);
     }
 
-    public function register_intervals(array $schedules): array
+    public function registerIntervals(array $schedules): array
     {
         $schedules['2h'] = ['interval' => 2 * HOUR_IN_SECONDS, 'display' => __('Every 2 hours', 'virakcloud-backup')];
         $schedules['4h'] = ['interval' => 4 * HOUR_IN_SECONDS, 'display' => __('Every 4 hours', 'virakcloud-backup')];
@@ -30,10 +31,10 @@ class Scheduler
             return;
         }
         $this->unschedule();
-        $this->schedule_next();
+        $this->scheduleNext();
     }
 
-    public function schedule_next(): void
+    public function scheduleNext(): void
     {
         $cfg = $this->settings->get();
         $interval = $cfg['schedule']['interval'] ?? 'weekly';
@@ -65,4 +66,3 @@ class Scheduler
         }
     }
 }
-

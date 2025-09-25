@@ -1,4 +1,5 @@
 <?php
+
 namespace VirakCloud\Backup;
 
 class HealthCheck
@@ -10,10 +11,9 @@ class HealthCheck
         $this->settings = $settings;
     }
 
-    public function cron_health(): void
+    public function cronHealth(): void
     {
         // Could write heartbeat info, upcoming runs, last run, etc.
         update_option('vcbk_last_health', gmdate('c'), false);
     }
 }
-
