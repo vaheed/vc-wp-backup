@@ -8,7 +8,10 @@
       if(bar){ bar.style.width = p+'%'; }
       if(txt){ txt.textContent = stage+' ('+p+'%)'; }
     }).catch(function(){});
-    ajax(VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce).then(function(j){
+    var levelSel = q('select[name="level"]');
+    var level = levelSel ? levelSel.value : '';
+    var url = VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce + (level?"&level="+encodeURIComponent(level):'');
+    ajax(url).then(function(j){
       if(Array.isArray(j.lines)){
         var el = q('#vcbk-log'); if(el){ el.textContent = j.lines.join('\n'); }
       }
@@ -36,7 +39,13 @@
     compute();
   }
 
-  document.addEventListener('DOMContentLoaded', function(){ schedulePreview(); });
+  document.addEventListener('DOMContentLoaded', function(){
+    schedulePreview();
+    // Auto-start polling if a live log container exists on the page
+    var logEl = q('#vcbk-log');
+    var toggle = q('#vcbk-toggle-autorefresh');
+    if(logEl){ poll(); window.vcbkTimer=setInterval(poll, 2500); if(toggle){ toggle.dataset.running='1'; toggle.textContent='Stop Auto-Refresh'; } }
+  });
 
   document.addEventListener('click', function(e){
     var t = e.target;

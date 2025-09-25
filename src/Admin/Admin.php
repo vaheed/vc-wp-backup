@@ -33,7 +33,6 @@ class Admin
         add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
         add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
         add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
-        add_action('admin_post_vcbk_wizard_next', [$this, 'handleWizardNext']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
@@ -49,14 +48,6 @@ class Admin
             'vcbk',
             [$this, 'renderDashboard'],
             'dashicons-cloud'
-        );
-        add_submenu_page(
-            'vcbk',
-            __('Setup Wizard', 'virakcloud-backup'),
-            __('Setup Wizard', 'virakcloud-backup'),
-            'manage_options',
-            'vcbk-setup',
-            [$this, 'renderWizard']
         );
         add_submenu_page(
             'vcbk',
@@ -477,7 +468,9 @@ class Admin
             $data = wp_unslash($_POST);
             $config = $this->settings->sanitizeFromPost($data);
             $this->settings->set($config);
-            $done = add_query_arg('done', '1', admin_url('admin.php?page=vcbk-setup'));
+            // Mark setup as complete and keep user on step 3 with a completion notice
+            update_option('vcbk_setup_complete', current_time('mysql'), false);
+            $done = add_query_arg(['step' => '3', 'done' => '1'], admin_url('admin.php?page=vcbk-setup'));
             wp_safe_redirect($done);
             exit;
         }
@@ -488,6 +481,9 @@ class Admin
     public function renderWizard(): void
     {
         $step = isset($_GET['step']) ? (int) $_GET['step'] : 1;
+        if (!empty($_GET['done'])) {
+            $step = max($step, 3);
+        }
         $cfg = $this->settings->get();
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('VirakCloud Backup • Setup Wizard', 'virakcloud-backup') . '</h1>';
@@ -585,8 +581,10 @@ class Admin
         $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
         echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
         echo '</form>';
+        // Live log viewer controls (align with plugin-ui.js expectations)
+        echo '<p style="margin-top:10px"><button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button></p>';
         $lines = $this->logger->tailFiltered(500, $level ?: null);
-        echo '<pre class="vcbk-log">' . esc_html(implode("\n", $lines)) . '</pre>';
+        echo '<pre id="vcbk-log" class="vcbk-log">' . esc_html(implode("\n", $lines)) . '</pre>';
         echo '</div>';
     }
 
@@ -613,7 +611,12 @@ class Admin
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['error' => 'forbidden']);
         }
-        wp_send_json(['lines' => $this->logger->tail(400)]);
+        $level = isset($_GET['level']) ? sanitize_text_field((string) $_GET['level']) : '';
+        if ($level === '') {
+            $level = isset($_POST['level']) ? sanitize_text_field((string) $_POST['level']) : '';
+        }
+        $lines = $level !== '' ? $this->logger->tailFiltered(400, $level) : $this->logger->tail(400);
+        wp_send_json(['lines' => $lines]);
     }
 
     public function ajaxProgress(): void

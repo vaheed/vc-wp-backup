@@ -37,7 +37,11 @@ class ArchiveBuilder
             }
             foreach ($paths as $base) {
                 $base = rtrim($base, '/');
-                $this->addDirToZip($zip, $base, $exclude);
+                if (is_dir($base)) {
+                    $this->addDirToZip($zip, $base, $exclude);
+                } elseif (is_file($base)) {
+                    $this->addFileToZip($zip, $base, $exclude);
+                }
             }
             $zip->close();
         } else {
@@ -45,7 +49,11 @@ class ArchiveBuilder
             $tar = substr($output, 0, -3); // remove .gz
             $phar = new \PharData($tar);
             foreach ($paths as $base) {
-                $this->addDirToTar($phar, $base, $exclude);
+                if (is_dir($base)) {
+                    $this->addDirToTar($phar, $base, $exclude);
+                } elseif (is_file($base)) {
+                    $this->addFileToTar($phar, $base, $exclude);
+                }
             }
             $phar->compress(\Phar::GZ);
             unset($phar);
@@ -99,6 +107,30 @@ class ArchiveBuilder
             }
             $phar->addFile($path, $rel);
         }
+    }
+
+    /**
+     * @param string[] $exclude
+     */
+    private function addFileToZip(\ZipArchive $zip, string $filePath, array $exclude): void
+    {
+        $rel = basename($filePath);
+        if ($this->isExcluded($rel, $exclude)) {
+            return;
+        }
+        $zip->addFile($filePath, $rel);
+    }
+
+    /**
+     * @param string[] $exclude
+     */
+    private function addFileToTar(\PharData $phar, string $filePath, array $exclude): void
+    {
+        $rel = basename($filePath);
+        if ($this->isExcluded($rel, $exclude)) {
+            return;
+        }
+        $phar->addFile($filePath, $rel);
     }
 
     /**
