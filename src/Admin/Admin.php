@@ -34,7 +34,6 @@ class Admin
         add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
         add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
         add_action('admin_post_vcbk_run_restore', [$this, 'handleRunRestore']);
-        add_action('admin_post_vcbk_run_migrate', [$this, 'handleRunMigrate']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
@@ -90,14 +89,6 @@ class Admin
             'update_core',
             'vcbk-restore',
             [$this, 'renderRestore']
-        );
-        add_submenu_page(
-            'vcbk',
-            __('Migrate', 'virakcloud-backup'),
-            __('Migrate', 'virakcloud-backup'),
-            'update_core',
-            'vcbk-migrate',
-            [$this, 'renderMigrate']
         );
         add_submenu_page(
             'vcbk',
@@ -259,7 +250,7 @@ class Admin
         $bucket = (string) ($this->settings->get()['s3']['bucket'] ?? '');
         if ($bucket === '') {
             echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Configure your S3 bucket in Settings to see recent backups.', 'virakcloud-backup') . '</p>';
-        } else try {
+        } else { try {
             $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
             $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
             $items = [];
@@ -303,6 +294,7 @@ class Admin
             }
         } catch (\Throwable $e) {
             echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
+        }
         }
         echo '</div>';
 
@@ -424,6 +416,13 @@ class Admin
             printf('<option value="%s" %s>%s</option>', esc_attr($i), $sel, esc_html($i));
         }
         echo '</select></td></tr>';
+        // Scheduled backup type
+        $types = ['full','db','files','incremental'];
+        echo '<tr><th>' . esc_html__('Backup Type', 'virakcloud-backup') . '</th><td><select name="backup[type]">';
+        foreach ($types as $t) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($t), selected($cfg['backup']['type'], $t, false), esc_html($t));
+        }
+        echo '</select></td></tr>';
         echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
         $startVal = esc_attr($schedule['start_time'] ?? '01:30');
         printf('<input type="text" name="schedule[start_time]" value="%s" class="regular-text" placeholder="HH:MM" />', $startVal);
@@ -465,6 +464,13 @@ class Admin
                 $sel,
                 esc_html($i)
             );
+        }
+        echo '</select></td></tr>';
+        // Scheduled backup type
+        $types = ['full','db','files','incremental'];
+        echo '<tr><th>' . esc_html__('Backup Type', 'virakcloud-backup') . '</th><td><select name="backup[type]">';
+        foreach ($types as $t) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($t), selected($cfg['backup']['type'], $t, false), esc_html($t));
         }
         echo '</select></td></tr>';
         echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
@@ -626,6 +632,15 @@ class Admin
                 echo '<input type="checkbox" name="dry_run" /> ';
                 echo esc_html__('Dry Run (extract and validate only)', 'virakcloud-backup');
                 echo '</label> ';
+                // URL rewrite (migration) options
+                $home = home_url();
+                echo '<span style="margin-left:12px">' . esc_html__('Rewrite URLs', 'virakcloud-backup') . ':</span> ';
+                echo '<label style="margin-left:6px">' . esc_html__('From', 'virakcloud-backup') . ' ';
+                printf('<input type="url" name="migrate[from]" value="%s" class="regular-text" placeholder="https://old.example.com" />', esc_attr($home));
+                echo '</label> ';
+                echo '<label style="margin-left:6px">' . esc_html__('To', 'virakcloud-backup') . ' ';
+                echo '<input type="url" name="migrate[to]" value="" class="regular-text" placeholder="https://new.example.com" />';
+                echo '</label> ';
                 echo '<button class="button button-primary" style="margin-left:12px">';
                 echo esc_html__('Start Restore', 'virakcloud-backup');
                 echo '</button>';
@@ -657,13 +672,20 @@ class Admin
         }
         $key = isset($_POST['key']) ? sanitize_text_field((string) $_POST['key']) : '';
         $dry = !empty($_POST['dry_run']);
+        $migrate = isset($_POST['migrate']) && is_array($_POST['migrate']) ? (array) $_POST['migrate'] : [];
         if ($key === '') {
             wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing backup key', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
             exit;
         }
         try {
             $rm = new RestoreManager($this->settings, $this->logger);
-            $rm->restoreFromS3($key, ['dry_run' => $dry]);
+            $options = ['dry_run' => $dry];
+            $from = isset($migrate['from']) ? esc_url_raw((string) $migrate['from']) : '';
+            $to = isset($migrate['to']) ? esc_url_raw((string) $migrate['to']) : '';
+            if ($from !== '' && $to !== '' && $from !== $to && !$dry) {
+                $options['migrate'] = ['from' => $from, 'to' => $to];
+            }
+            $rm->restoreFromS3($key, $options);
             $msg = $dry ? __('Dry run complete', 'virakcloud-backup') : __('Restore complete', 'virakcloud-backup');
             wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-restore')));
         } catch (\Throwable $e) {
@@ -672,62 +694,6 @@ class Admin
         exit;
     }
 
-    public function renderMigrate(): void
-    {
-        echo '<div class="wrap"><h1>' . esc_html__('Migrate', 'virakcloud-backup') . '</h1>';
-        if (!empty($_GET['message'])) {
-            echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
-        }
-        if (!empty($_GET['error'])) {
-            echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
-        }
-        echo '<div class="vcbk-card">';
-        echo '<p>' . esc_html__('Replace all occurrences of the old site URL with a new site URL across the database. Serialized data is handled.', 'virakcloud-backup') . '</p>';
-        echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Important: Take a full backup before running migration. This action alters your database.', 'virakcloud-backup') . '</p>';
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
-        wp_nonce_field('vcbk_run_migrate');
-        echo '<input type="hidden" name="action" value="vcbk_run_migrate" />';
-        $home = home_url();
-        echo '<table class="form-table">';
-        echo '<tr><th>' . esc_html__('From URL', 'virakcloud-backup') . '</th><td>';
-        printf('<input type="url" name="from" value="%s" class="regular-text" required />', esc_attr($home));
-        echo '</td></tr>';
-        echo '<tr><th>' . esc_html__('To URL', 'virakcloud-backup') . '</th><td>';
-        echo '<input type="url" name="to" value="" class="regular-text" placeholder="https://new.example.com" required />';
-        echo '</td></tr>';
-        echo '</table>';
-        echo '<p><button class="button button-primary">' . esc_html__('Run Migration', 'virakcloud-backup') . '</button></p>';
-        echo '</form>';
-        echo '</div>';
-        echo '</div>';
-    }
-
-    public function handleRunMigrate(): void
-    {
-        check_admin_referer('vcbk_run_migrate');
-        if (!current_user_can('update_core')) {
-            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
-        }
-        $from = isset($_POST['from']) ? esc_url_raw((string) $_POST['from']) : '';
-        $to = isset($_POST['to']) ? esc_url_raw((string) $_POST['to']) : '';
-        if ($from === '' || $to === '' || $from === $to) {
-            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Invalid URLs provided', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-migrate')));
-            exit;
-        }
-        try {
-            $mm = new \VirakCloud\Backup\MigrationManager($this->logger);
-            $mm->searchReplace($from, $to);
-            // Update siteurl/home
-            update_option('home', $to);
-            update_option('siteurl', $to);
-            $this->logger->info('migrate_update_urls', ['from' => $from, 'to' => $to]);
-            $msg = __('Migration completed. You may need to re-login.', 'virakcloud-backup');
-            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-migrate')));
-        } catch (\Throwable $e) {
-            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-migrate')));
-        }
-        exit;
-    }
 
     public function handleWizardNext(): void
     {

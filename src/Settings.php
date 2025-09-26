@@ -100,6 +100,11 @@ class Settings
                 : '01:30';
             $cfg['schedule']['catchup'] = !empty($data['schedule']['catchup']);
         }
+        if (isset($data['backup']) && is_array($data['backup'])) {
+            $allowed = ['full', 'db', 'files', 'incremental'];
+            $type = (string) ($data['backup']['type'] ?? $cfg['backup']['type']);
+            $cfg['backup']['type'] = in_array($type, $allowed, true) ? $type : 'full';
+        }
         return $cfg;
     }
 }

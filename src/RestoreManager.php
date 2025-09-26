@@ -49,6 +49,9 @@ class RestoreManager
      *
      * @param array<string, mixed> $options { preserve_plugin?:bool, dry_run?:bool }
      */
+    /**
+     * @param array{preserve_plugin?:bool, dry_run?:bool, migrate?:array{from:string,to:string}} $options
+     */
     public function restoreFullLocal(string $archivePath, array $options = []): void
     {
         if (!current_user_can('update_core')) {
@@ -136,6 +139,19 @@ class RestoreManager
         };
         $this->copyTree($srcRoot, rtrim(ABSPATH, '/'), $exclude);
 
+        // Optional post-restore URL rewrite (migration)
+        if (!empty($options['migrate']) && is_array($options['migrate'])) {
+            $from = (string) ($options['migrate']['from'] ?? '');
+            $to = (string) ($options['migrate']['to'] ?? '');
+            if ($from !== '' && $to !== '' && $from !== $to) {
+                $this->logger->setProgress(85, __('Rewriting URLs', 'virakcloud-backup'));
+                (new MigrationManager($this->logger))->searchReplace($from, $to);
+                update_option('home', $to);
+                update_option('siteurl', $to);
+                $this->logger->info('migrate_post_restore', ['from' => $from, 'to' => $to]);
+            }
+        }
+
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         $this->logger->info('restore_full_complete');
         $this->logger->setProgress(100, __('Complete', 'virakcloud-backup'));
@@ -162,6 +178,9 @@ class RestoreManager
 
     /**
      * @param array<string, mixed> $options
+     */
+    /**
+     * @param array{dry_run?:bool, migrate?:array{from:string,to:string}} $options
      */
     public function restoreLocal(string $archivePath, array $options = []): void
     {
@@ -241,6 +260,19 @@ class RestoreManager
         $content = WP_CONTENT_DIR;
         $this->logger->setProgress(70, __('Restoring Files', 'virakcloud-backup'));
         $this->recurseCopy($srcRoot . '/wp-content', $content);
+
+        // Optional post-restore URL rewrite (migration)
+        if (!empty($options['migrate']) && is_array($options['migrate'])) {
+            $from = (string) ($options['migrate']['from'] ?? '');
+            $to = (string) ($options['migrate']['to'] ?? '');
+            if ($from !== '' && $to !== '' && $from !== $to) {
+                $this->logger->setProgress(85, __('Rewriting URLs', 'virakcloud-backup'));
+                (new MigrationManager($this->logger))->searchReplace($from, $to);
+                update_option('home', $to);
+                update_option('siteurl', $to);
+                $this->logger->info('migrate_post_restore', ['from' => $from, 'to' => $to]);
+            }
+        }
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         $this->logger->info('restore_complete');
