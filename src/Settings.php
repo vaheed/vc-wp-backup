@@ -32,8 +32,8 @@ class Settings
                     '*/node_modules/*',
                     'wp-content/uploads/virakcloud-backup',
                 ],
-                // Default to zip for better performance on most hosts
-                'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
+                // Force zip for performance and compatibility
+                'archive_format' => 'zip',
                 'encryption' => [
                     'enabled' => false,
                     'cipher' => 'AES-256-GCM',
@@ -58,6 +58,8 @@ class Settings
         ];
         $saved = get_option($this->option, []);
         $merged = wp_parse_args($saved, $defaults);
+        // Always enforce zip regardless of older saved values
+        $merged['backup']['archive_format'] = 'zip';
         // Normalize legacy exclude patterns (migration from broad substrings)
         if (isset($merged['backup']['exclude']) && is_array($merged['backup']['exclude'])) {
             $norm = [];
@@ -135,10 +137,8 @@ class Settings
             $allowed = ['full', 'db', 'files', 'incremental'];
             $type = (string) ($data['backup']['type'] ?? $cfg['backup']['type']);
             $cfg['backup']['type'] = in_array($type, $allowed, true) ? $type : 'full';
-            $fmt = isset($data['backup']['archive_format'])
-                ? (string) $data['backup']['archive_format']
-                : (string) ($cfg['backup']['archive_format'] ?? 'zip');
-            $cfg['backup']['archive_format'] = in_array($fmt, ['zip', 'tar.gz'], true) ? $fmt : 'zip';
+            // Always zip; ignore any posted archive_format
+            $cfg['backup']['archive_format'] = 'zip';
         }
         return $cfg;
     }

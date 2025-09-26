@@ -49,7 +49,8 @@ class BackupManager
         $uuid = Uuid::uuid4()->toString();
         $dateStamp = gmdate('Ymd-His');
         $typeSlug = in_array($type, ['full','db','files','incremental'], true) ? $type : 'full';
-        $ext = ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
+        // Force ZIP archives for performance and compatibility
+        $ext = 'zip';
         $archiveName = 'backup-' . $typeSlug . '-' . $dateStamp . '.' . $ext;
         $archivePath = trailingslashit($archives) . $archiveName;
 
@@ -98,7 +99,7 @@ class BackupManager
                 $this->logger->debug('incremental_cutoff', ['ts' => $cutoff]);
             }
         }
-        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude, $archOptions);
+        $manifest = $arch->build('zip', $paths, $archivePath, $exclude, $archOptions);
         $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
         $this->checkControl();
 

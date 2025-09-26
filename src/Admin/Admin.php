@@ -431,18 +431,7 @@ class Admin
             printf('<option value="%s" %s>%s</option>', esc_attr($t), selected($cfg['backup']['type'], $t, false), esc_html($t));
         }
         echo '</select></td></tr>';
-        // Archive format (zip vs tar.gz)
-        $formats = ['zip' => 'ZIP (.zip)', 'tar.gz' => 'TAR GZip (.tar.gz)'];
-        echo '<tr><th>' . esc_html__('Archive Format', 'virakcloud-backup') . '</th><td><select name="backup[archive_format]">';
-        foreach ($formats as $val => $label) {
-            printf(
-                '<option value="%s" %s>%s</option>',
-                esc_attr($val),
-                selected($cfg['backup']['archive_format'] ?? 'zip', $val, false),
-                esc_html__($label, 'virakcloud-backup')
-            );
-        }
-        echo '</select></td></tr>';
+        // Archive format: always ZIP (no UI)
         echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
         $startVal = esc_attr($schedule['start_time'] ?? '01:30');
         printf('<input type="text" name="schedule[start_time]" value="%s" class="regular-text" placeholder="HH:MM" />', $startVal);
