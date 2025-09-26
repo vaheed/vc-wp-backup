@@ -200,24 +200,8 @@ class RestoreManager
         if (!empty($sqlPaths)) {
             $this->logger->setProgress(45, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlPaths[0]);
-            // Optionally preserve plugin settings from the current site (e.g., S3 keys)
-            if ($preservePlugin) {
-                update_option('vcbk_settings', $preservedSettings, false);
-                $this->logger->info('restore_settings_preserved');
-            } else {
-                // Fallback: if imported settings are missing critical S3 fields, merge from preserved
-                $imported = get_option('vcbk_settings', []);
-                if (!is_array($imported)) {
-                    $imported = [];
-                }
-                $s3 = $imported['s3'] ?? [];
-                $needMerge = empty($s3['bucket']) || empty($s3['access_key']) || empty($s3['secret_key']);
-                if ($needMerge) {
-                    $imported['s3'] = array_merge($preservedSettings['s3'] ?? [], $s3);
-                    update_option('vcbk_settings', $imported, false);
-                    $this->logger->info('restore_settings_merged');
-                }
-            }
+            // Reconcile plugin settings: prefer current if valid; otherwise keep imported from backup
+            $this->reconcileSettingsAfterImport($preservedSettings);
             $this->logger->info('restore_db_import_complete');
         }
 
@@ -416,8 +400,8 @@ class RestoreManager
         if ($sqlFiles) {
             $this->logger->setProgress(55, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlFiles[0]);
-            update_option('vcbk_settings', $preserved, false);
-            $this->logger->info('restore_settings_preserved');
+            // Reconcile settings: only overwrite imported settings if current had valid S3 config
+            $this->reconcileSettingsAfterImport($preserved);
         }
 
         // Locate wp-content inside extracted archive (may be nested under site root name)
@@ -517,6 +501,45 @@ class RestoreManager
             }
         }
         @rmdir($dir);
+    }
+
+    /**
+     * Prefer current site's valid S3 settings when present; otherwise keep
+     * settings imported from the backup. If neither is valid, leave as-is.
+     * @param array<string,mixed> $preserved
+     */
+    private function reconcileSettingsAfterImport(array $preserved): void
+    {
+        $imported = get_option('vcbk_settings', []);
+        if (!is_array($imported)) {
+            $imported = [];
+        }
+        $has = function ($cfg): bool {
+            if (!is_array($cfg)) { return false; }
+            $s3 = $cfg['s3'] ?? [];
+            return !empty($s3['bucket']) && !empty($s3['access_key']) && !empty($s3['secret_key']);
+        };
+        $presOk = $has($preserved);
+        $impOk = $has($imported);
+        if ($presOk && !$impOk) {
+            update_option('vcbk_settings', $preserved, false);
+            $this->logger->info('restore_settings_preserved');
+            return;
+        }
+        if ($presOk && $impOk) {
+            // Keep current credentials to avoid breaking future backups
+            update_option('vcbk_settings', $preserved, false);
+            $this->logger->info('restore_settings_preserved');
+            return;
+        }
+        if (!$presOk && $impOk) {
+            // Use settings from the backup when current site had nothing configured
+            update_option('vcbk_settings', $imported, false);
+            $this->logger->info('restore_settings_from_backup');
+            return;
+        }
+        // Neither has usable S3 settings; do nothing
+        $this->logger->info('restore_settings_missing');
     }
 
     /**

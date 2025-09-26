@@ -589,6 +589,12 @@ class Admin
     public function renderRestore(): void
     {
         echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
+        if (!empty($_GET['message'])) {
+            echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
+        }
+        if (!empty($_GET['error'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html((string) $_GET['error']) . '</p></div>';
+        }
         echo '<div class="vcbk-card">';
         echo '<p>'
             . esc_html__(
