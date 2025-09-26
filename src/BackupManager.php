@@ -241,6 +241,8 @@ class BackupManager
         }
         fwrite($fh, "-- VirakCloud Backup SQL Export\nSET NAMES utf8mb4;\nSET foreign_key_checks = 0;\n");
         $tables = $wpdb->get_col('SHOW TABLES');
+        $total = max(1, count($tables));
+        $index = 0;
         foreach ($tables as $table) {
             $create = $wpdb->get_row("SHOW CREATE TABLE `$table`", ARRAY_A);
             fwrite($fh, "\nDROP TABLE IF EXISTS `$table`;\n" . $create['Create Table'] . ";\n\n");
@@ -259,6 +261,14 @@ class BackupManager
                 );
                 fwrite($fh, $sql);
             }
+            // Update progress within the DB stage (20–35%)
+            $index++;
+            $pct = (int) floor(20 + (15 * $index / $total));
+            $this->logger->setProgress($pct, __('Archiving DB', 'virakcloud-backup'), [
+                'table' => (string) $table,
+                'tablesProcessed' => $index,
+                'tablesTotal' => $total,
+            ]);
         }
         fwrite($fh, "SET foreign_key_checks = 1;\n");
         fclose($fh);

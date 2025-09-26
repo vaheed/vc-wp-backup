@@ -52,10 +52,17 @@ class Logger
     public function setProgress(int $percent, string $stage, array $extra = []): void
     {
         $percent = max(0, min(100, $percent));
+        // High‑resolution timestamp to make fast updates visible in UI/logs
+        try {
+            $dt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            $ts = $dt->format('Y-m-d\TH:i:s.u\Z');
+        } catch (\Throwable $e) {
+            $ts = gmdate('c');
+        }
         $payload = array_merge([
             'percent' => $percent,
             'stage' => $stage,
-            'ts' => gmdate('c'),
+            'ts' => $ts,
         ], $extra);
         update_option('vcbk_progress', $payload, false);
         $this->debug('progress', $payload);

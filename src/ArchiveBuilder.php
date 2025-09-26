@@ -8,6 +8,11 @@ class ArchiveBuilder
     private int $progressCurrent = 40;
     private int $progressMax = 69;
     private int $processed = 0;
+    private int $totalBytes = 0;
+    private int $processedBytes = 0;
+    private int $totalFiles = 0;
+    private int $processedFiles = 0;
+    private int $lastReportedPercent = -1;
 
     public function __construct(Logger $logger)
     {
@@ -31,12 +36,19 @@ class ArchiveBuilder
         $this->progressCurrent = 40;
         $this->progressMax = 69; // keep 70 for next stage
         $this->processed = 0;
+        $this->processedBytes = 0;
+        $this->processedFiles = 0;
+        $this->lastReportedPercent = -1;
         $manifest = [
             'format' => $format,
             'files' => [],
             'sha256' => null,
         ];
         $modifiedSince = isset($options['modifiedSince']) ? (int) $options['modifiedSince'] : null;
+
+        // Pre-scan to compute realistic totals for progress
+        [$this->totalBytes, $this->totalFiles] = $this->scanTotals($paths, $exclude, $modifiedSince);
+        $this->logger->debug('archive_scan', ['totalBytes' => $this->totalBytes, 'totalFiles' => $this->totalFiles]);
 
         if ($format === 'zip') {
             $zip = new \ZipArchive();
@@ -115,8 +127,8 @@ class ArchiveBuilder
                 $zip->addEmptyDir($rel);
             } else {
                 $zip->addFile($path, $rel);
+                $this->tickArchivingProgress(@filesize($path) ?: 0);
             }
-            $this->tickArchivingProgress();
         }
     }
 
@@ -142,7 +154,7 @@ class ArchiveBuilder
                 continue;
             }
             $phar->addFile($path, $rel);
-            $this->tickArchivingProgress();
+            $this->tickArchivingProgress(@filesize($path) ?: 0);
         }
     }
 
@@ -156,7 +168,7 @@ class ArchiveBuilder
             return;
         }
         $zip->addFile($filePath, $rel);
-        $this->tickArchivingProgress();
+        $this->tickArchivingProgress(@filesize($filePath) ?: 0);
     }
 
     /**
@@ -169,16 +181,27 @@ class ArchiveBuilder
             return;
         }
         $phar->addFile($filePath, $rel);
-        $this->tickArchivingProgress();
+        $this->tickArchivingProgress(@filesize($filePath) ?: 0);
     }
 
-    private function tickArchivingProgress(): void
+    private function tickArchivingProgress(int $bytesAdded): void
     {
         $this->processed++;
-        // Bump progress roughly every 500 files, up to 69%
-        if ($this->processed % 500 === 0 && $this->progressCurrent < $this->progressMax) {
-            $this->progressCurrent++;
-            $this->logger->setProgress($this->progressCurrent, 'Archiving Files');
+        $this->processedFiles++;
+        $this->processedBytes += max(0, $bytesAdded);
+        if ($this->totalBytes > 0) {
+            $pct = 40 + (int) floor(30 * $this->processedBytes / max(1, $this->totalBytes));
+            $pct = max(40, min(69, $pct));
+            if ($pct !== $this->lastReportedPercent) {
+                $this->lastReportedPercent = $pct;
+                $this->progressCurrent = $pct;
+                $this->logger->setProgress($pct, 'Archiving Files', [
+                    'processedBytes' => $this->processedBytes,
+                    'totalBytes' => $this->totalBytes,
+                    'processedFiles' => $this->processedFiles,
+                    'totalFiles' => $this->totalFiles,
+                ]);
+            }
         }
     }
 
@@ -207,5 +230,50 @@ class ArchiveBuilder
             }
         }
         return false;
+    }
+
+    /**
+     * Compute total bytes and files to be archived (after exclusions and optional modifiedSince).
+     * @param string[] $paths
+     * @param string[] $exclude
+     * @return array{0:int,1:int} [bytes, files]
+     */
+    private function scanTotals(array $paths, array $exclude, ?int $modifiedSince): array
+    {
+        $bytes = 0;
+        $files = 0;
+        foreach ($paths as $base) {
+            $base = rtrim($base, '/');
+            if (is_dir($base)) {
+                $baseName = basename($base);
+                $it = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS)
+                );
+                foreach ($it as $file) {
+                    $path = (string) $file;
+                    if ($modifiedSince !== null && is_file($path)) {
+                        $mt = @filemtime($path);
+                        if ($mt !== false && $mt < $modifiedSince) {
+                            continue;
+                        }
+                    }
+                    $rel = $baseName . '/' . ltrim(substr($path, strlen($base)), '/');
+                    if ($this->isExcluded($rel, $exclude)) {
+                        continue;
+                    }
+                    if (is_file($path)) {
+                        $files++;
+                        $bytes += @filesize($path) ?: 0;
+                    }
+                }
+            } elseif (is_file($base)) {
+                $rel = basename($base);
+                if (!$this->isExcluded($rel, $exclude)) {
+                    $files++;
+                    $bytes += @filesize($base) ?: 0;
+                }
+            }
+        }
+        return [$bytes, $files];
     }
 }
