@@ -23,6 +23,10 @@ class RestoreManager
         if (!current_user_can('update_core')) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
+        // Avoid timeouts during large downloads
+        @ignore_user_abort(true);
+        if (function_exists('set_time_limit')) { @set_time_limit(0); }
+        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
         $cfg = $this->settings->get();
         $client = (new S3ClientFactory($this->settings, $this->logger))->create();
         $bucket = (string) ($cfg['s3']['bucket'] ?? '');
@@ -36,7 +40,24 @@ class RestoreManager
         $local = $restoreDir . '/' . basename($key);
         $this->logger->info('restore_download_start', ['key' => $key]);
         $this->logger->setProgress(5, __('Downloading', 'virakcloud-backup'));
-        $client->getObject(['Bucket' => $bucket, 'Key' => $key, 'SaveAs' => $local]);
+        $start = 5; $end = 18;
+        $client->getObject([
+            'Bucket' => $bucket,
+            'Key' => $key,
+            'SaveAs' => $local,
+            '@http' => [
+                'progress' => function ($dlTotal, $dlTransferred) use ($start, $end) {
+                    if ($dlTotal > 0) {
+                        $pct = (int) floor($start + ($end - $start) * ($dlTransferred / max(1, $dlTotal)));
+                        $pct = max($start, min($end, $pct));
+                        $this->logger->setProgress($pct, __('Downloading', 'virakcloud-backup'), [
+                            'bytesDownloaded' => (int) $dlTransferred,
+                            'bytesTotal' => (int) $dlTotal,
+                        ]);
+                    }
+                }
+            ],
+        ]);
         $this->logger->info('restore_download_complete', ['file' => $local]);
         $this->logger->setProgress(15, __('Downloaded', 'virakcloud-backup'));
 
@@ -57,6 +78,9 @@ class RestoreManager
         if (!current_user_can('update_core')) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
+        @ignore_user_abort(true);
+        if (function_exists('set_time_limit')) { @set_time_limit(0); }
+        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
         $preservePlugin = array_key_exists('preserve_plugin', $options) ? (bool) $options['preserve_plugin'] : true;
         // Capture current settings so we can optionally preserve/merge creds after DB import
         $preservedSettings = $this->settings->get();
@@ -193,7 +217,25 @@ class RestoreManager
         wp_mkdir_p($restoreDir);
         $local = $restoreDir . '/' . basename($key);
         $this->logger->info('restore_full_download_start', ['key' => $key]);
-        $client->getObject(['Bucket' => $bucket, 'Key' => $key, 'SaveAs' => $local]);
+        $this->logger->setProgress(5, __('Downloading', 'virakcloud-backup'));
+        $start = 5; $end = 18;
+        $client->getObject([
+            'Bucket' => $bucket,
+            'Key' => $key,
+            'SaveAs' => $local,
+            '@http' => [
+                'progress' => function ($dlTotal, $dlTransferred) use ($start, $end) {
+                    if ($dlTotal > 0) {
+                        $pct = (int) floor($start + ($end - $start) * ($dlTransferred / max(1, $dlTotal)));
+                        $pct = max($start, min($end, $pct));
+                        $this->logger->setProgress($pct, __('Downloading', 'virakcloud-backup'), [
+                            'bytesDownloaded' => (int) $dlTransferred,
+                            'bytesTotal' => (int) $dlTotal,
+                        ]);
+                    }
+                }
+            ],
+        ]);
         $this->restoreFullLocal($local, $options);
     }
 
@@ -208,6 +250,9 @@ class RestoreManager
         if (!current_user_can('update_core')) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
+        @ignore_user_abort(true);
+        if (function_exists('set_time_limit')) { @set_time_limit(0); }
+        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
         // Touch settings to make dependency explicit for analysis
         $this->settings->get();
         $this->logger->info('restore_start', ['archive' => basename($archivePath)]);
@@ -280,7 +325,7 @@ class RestoreManager
         // Copy files over cautiously
         $content = WP_CONTENT_DIR;
         $this->logger->setProgress(70, __('Restoring Files', 'virakcloud-backup'));
-        $this->recurseCopy($srcRoot . '/wp-content', $content);
+        $this->copyDirWithProgress($srcRoot . '/wp-content', $content, 70, 90);
 
         // Optional post-restore URL rewrite (migration)
         if (isset($options['migrate'])) {
@@ -341,6 +386,46 @@ class RestoreManager
             }
         }
         closedir($dir);
+    }
+
+    private function copyDirWithProgress(string $src, string $dst, int $startPercent = 70, int $endPercent = 90): void
+    {
+        if (!is_dir($src)) {
+            return;
+        }
+        // Scan for total size
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS)
+        );
+        $total = 0;
+        foreach ($it as $p => $info) {
+            if ($info->isFile()) { $total += @filesize((string) $p) ?: 0; }
+        }
+        $copied = 0;
+        $it2 = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($it2 as $path => $info) {
+            $rel = ltrim(substr((string) $path, strlen($src)), '/');
+            $target = rtrim($dst, '/') . '/' . $rel;
+            if ($info->isDir()) {
+                if (!is_dir($target)) { @mkdir($target, 0755, true); }
+            } else {
+                $dir = dirname($target);
+                if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+                @copy($path, $target);
+                $copied += @filesize((string) $path) ?: 0;
+                if ($total > 0) {
+                    $pct = (int) floor($startPercent + ($endPercent - $startPercent) * ($copied / max(1, $total)));
+                    $pct = max($startPercent, min($endPercent, $pct));
+                    $this->logger->setProgress($pct, __('Restoring Files', 'virakcloud-backup'), [
+                        'bytesCopied' => $copied,
+                        'bytesTotal' => $total,
+                    ]);
+                }
+            }
+        }
     }
 
     /**
