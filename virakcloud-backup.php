@@ -52,9 +52,6 @@ function vcbk_admin_notice_missing_vendor()
 
 // Boot plugin
 add_action('plugins_loaded', function () {
-    // Load translations
-    load_plugin_textdomain('virakcloud-backup', false, dirname(plugin_basename(__FILE__)) . '/languages');
-
     // Instantiate main plugin
     try {
         $plugin = new \VirakCloud\Backup\Plugin();

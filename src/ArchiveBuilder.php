@@ -62,8 +62,17 @@ class ArchiveBuilder
             @unlink($tar);
         }
 
-        // Hash
-        $hash = hash_file('sha256', $output);
+        // Hash (may be expensive on large files; try to avoid timeouts)
+        $hash = null;
+        try {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(0);
+            }
+            $this->logger->setProgress(60, __('Verifying', 'virakcloud-backup'));
+            $hash = hash_file('sha256', $output);
+        } catch (\Throwable $e) {
+            $this->logger->error('archive_hash_failed', ['message' => $e->getMessage()]);
+        }
         $manifest['sha256'] = $hash;
         $this->logger->debug('archive_build_complete', ['output' => $output, 'sha256' => $hash]);
         return $manifest;

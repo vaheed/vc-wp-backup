@@ -43,7 +43,7 @@ class Plugin
 
     public function registerTextdomain(): void
     {
-        // Already loaded from main file; kept for safety
+        load_plugin_textdomain('virakcloud-backup', false, dirname(plugin_basename(VCBK_PLUGIN_FILE)) . '/languages');
     }
 
     public function runScheduledBackup(): void

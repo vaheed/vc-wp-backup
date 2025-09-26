@@ -37,7 +37,6 @@ class Admin
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
-        add_action('admin_post_vcbk_wizard_next', [$this, 'handleWizardNext']);
     }
 
     public function menu(): void
@@ -50,14 +49,7 @@ class Admin
             [$this, 'renderDashboard'],
             'dashicons-cloud'
         );
-        add_submenu_page(
-            'vcbk',
-            __('Setup Wizard', 'virakcloud-backup'),
-            __('Setup Wizard', 'virakcloud-backup'),
-            'manage_options',
-            'vcbk-setup',
-            [$this, 'renderWizard']
-        );
+        // Setup Wizard removed
         add_submenu_page(
             'vcbk',
             __('Settings', 'virakcloud-backup'),

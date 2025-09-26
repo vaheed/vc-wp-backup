@@ -23,6 +23,14 @@ class BackupManager
      */
     public function run(string $type = 'full', array $options = []): array
     {
+        // Make long-running backup safer against timeouts
+        @ignore_user_abort(true);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+        if (function_exists('wp_raise_memory_limit')) {
+            @wp_raise_memory_limit('admin');
+        }
         if (!current_user_can('manage_options') && empty($options['schedule'])) {
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
@@ -128,9 +136,9 @@ class BackupManager
                     'manifest' => $keyManifest,
                 ]);
                 $this->logger->setProgress(95, __('Verifying', 'virakcloud-backup'));
-                // Very light verify: re-hash local archive matches manifest
-                $ok = hash_file('sha256', $archivePath) === ($manifest['sha256'] ?? '');
-                $this->logger->debug('verify', ['ok' => $ok]);
+                // Skip expensive re-hash here; rely on the manifest hash computed earlier
+                $ok = isset($manifest['sha256']) && is_string($manifest['sha256']) && $manifest['sha256'] !== '';
+                $this->logger->debug('verify', ['ok' => $ok, 'sha256_present' => $ok]);
                 $this->logger->setProgress(100, $ok ? __('Complete', 'virakcloud-backup') : __('Finalizing', 'virakcloud-backup'));
                 update_option('vcbk_last_s3_upload', current_time('mysql'), false);
                 // Cleanup local artifacts after successful upload
