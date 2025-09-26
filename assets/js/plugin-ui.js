@@ -14,7 +14,7 @@
     }).catch(function(){});
     var levelSel = q('select[name="level"]');
     var level = levelSel ? levelSel.value : '';
-    var url = VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce + (level?"&level="+encodeURIComponent(level):'');
+    var url = VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce + (level?"&level="+encodeURIComponent(level):'') + "&lines=10";
     ajax(url).then(function(j){
       if(Array.isArray(j.lines)){
         var el = q('#vcbk-log'); if(el){
