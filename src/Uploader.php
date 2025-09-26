@@ -3,6 +3,8 @@
 namespace VirakCloud\Backup;
 
 use Aws\S3\S3Client;
+use GuzzleHttp\Psr7\Utils;
+use GuzzleHttp\Psr7\LimitStream;
 
 class Uploader
 {
@@ -26,7 +28,7 @@ class Uploader
      * For small files (<= 5 MiB) use single putObject. Otherwise use multipart upload.
      * @return array{parts:int}
      */
-    public function uploadAuto(string $key, string $filePath, int $partSize = 134217728): array
+    public function uploadAuto(string $key, string $filePath, int $partSize = 8388608): array
     {
         $size = filesize($filePath) ?: 0;
         if ($size <= 5 * 1024 * 1024) {
@@ -45,7 +47,7 @@ class Uploader
      * Perform multipart upload of a file to S3.
      * @return array{parts:int}
      */
-    public function uploadMultipart(string $key, string $filePath, int $partSize = 134217728): array
+    public function uploadMultipart(string $key, string $filePath, int $partSize = 8388608): array
     {
         if ($partSize < 1) {
             $partSize = 1;
@@ -72,16 +74,15 @@ class Uploader
             }
             /** @var positive-int $length */
             $length = $length;
-            $body = fread($fh, $length);
-            if ($body === false) {
-                throw new \RuntimeException('Read error during multipart upload');
-            }
+            // Stream the part without loading it fully into memory
+            $body = new LimitStream(Utils::streamFor($fh), $length, $offset);
             $result = $this->client->uploadPart([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
                 'UploadId' => $uploadId,
                 'PartNumber' => $partNumber,
                 'Body' => $body,
+                'ContentLength' => $length,
             ]);
             $parts[] = [
                 'PartNumber' => $partNumber,
