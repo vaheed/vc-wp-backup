@@ -106,11 +106,15 @@ class RestoreManager
             }
             $tmpDir = $tmp . '-dir';
             wp_mkdir_p($tmpDir);
-            $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
-            if ($ext === 'zip') {
+            $type = $this->detectArchiveType($archivePath);
+            if ($type === 'zip') {
                 // Prefer WordPress core unzip implementation for better compatibility
                 if (!function_exists('unzip_file')) {
                     @require_once ABSPATH . 'wp-admin/includes/file.php';
+                }
+                if (function_exists('WP_Filesystem')) {
+                    // Initialize filesystem to prefer 'direct' method
+                    @WP_Filesystem();
                 }
                 $unzipped = false;
                 if (function_exists('unzip_file')) {
@@ -130,13 +134,18 @@ class RestoreManager
                     $code = $zip->open($archivePath);
                     if ($code !== true) {
                         $msg = method_exists($zip, 'getStatusString') ? (string) $zip->getStatusString() : '';
+                        $this->logger->error('zip_open_failed', [
+                            'code' => $code,
+                            'status' => $msg,
+                            'size' => @filesize($archivePath),
+                        ]);
                         throw new \RuntimeException('Cannot open ZIP archive (code ' . (string) $code . ') ' . $msg);
                     }
                     $zip->extractTo($tmpDir);
                     $zip->close();
                 }
             } else {
-                if (str_ends_with($archivePath, '.tar.gz')) {
+                if ($type === 'tar.gz') {
                     $pharGz = new \PharData($archivePath);
                     $tarPath = substr($archivePath, 0, -3);
                     $pharGz->decompress();
@@ -315,10 +324,13 @@ class RestoreManager
             }
             $tmpDir = $tmp . '-dir';
             wp_mkdir_p($tmpDir);
-            $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
-            if ($ext === 'zip') {
+            $type = $this->detectArchiveType($archivePath);
+            if ($type === 'zip') {
                 if (!function_exists('unzip_file')) {
                     @require_once ABSPATH . 'wp-admin/includes/file.php';
+                }
+                if (function_exists('WP_Filesystem')) {
+                    @WP_Filesystem();
                 }
                 $unzipped = false;
                 if (function_exists('unzip_file')) {
@@ -337,6 +349,11 @@ class RestoreManager
                     $code = $zip->open($archivePath);
                     if ($code !== true) {
                         $msg = method_exists($zip, 'getStatusString') ? (string) $zip->getStatusString() : '';
+                        $this->logger->error('zip_open_failed', [
+                            'code' => $code,
+                            'status' => $msg,
+                            'size' => @filesize($archivePath),
+                        ]);
                         throw new \RuntimeException('Cannot open ZIP archive (code ' . (string) $code . ') ' . $msg);
                     }
                     $zip->extractTo($tmpDir);
@@ -344,7 +361,7 @@ class RestoreManager
                 }
             } else {
                 // Handle .tar.gz and .tar
-                if (str_ends_with($archivePath, '.tar.gz')) {
+                if ($type === 'tar.gz') {
                     $pharGz = new \PharData($archivePath);
                     $tarPath = substr($archivePath, 0, -3); // remove .gz
                     $pharGz->decompress();
@@ -361,6 +378,9 @@ class RestoreManager
             $this->logger->setProgress(22, __('Extraction failed', 'virakcloud-backup'));
             throw $e;
         }
+
+        // Log detected archive type for troubleshooting
+        $this->logger->debug('restore_detected_archive', ['type' => $this->detectArchiveType($archivePath), 'file' => basename($archivePath)]);
         $this->logger->setProgress(45, __('Unpacked', 'virakcloud-backup'));
 
         if ($dry) {
@@ -467,6 +487,38 @@ class RestoreManager
             }
         }
         @rmdir($dir);
+    }
+
+    /**
+     * Best-effort archive type detection by magic bytes.
+     * Returns 'zip', 'tar.gz' or 'tar'.
+     */
+    private function detectArchiveType(string $file): string
+    {
+        $fh = @fopen($file, 'rb');
+        if (!$fh) {
+            return pathinfo($file, PATHINFO_EXTENSION) === 'zip' ? 'zip' : 'tar.gz';
+        }
+        $head = @fread($fh, 8) ?: '';
+        @fclose($fh);
+        $bytes = bin2hex((string) $head);
+        // Zip: 50 4b 03 04 or 50 4b 05 06 (empty) or 50 4b 07 08
+        if (str_starts_with($bytes, '504b03') || str_starts_with($bytes, '504b05') || str_starts_with($bytes, '504b07')) {
+            return 'zip';
+        }
+        // Gzip: 1f 8b
+        if (str_starts_with($bytes, '1f8b')) {
+            return 'tar.gz';
+        }
+        // Fallback: trust extension
+        $ext = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
+        if ($ext === 'zip') {
+            return 'zip';
+        }
+        if ($ext === 'gz') {
+            return 'tar.gz';
+        }
+        return 'tar';
     }
 
     private function copyDirWithProgress(string $src, string $dst, int $startPercent = 70, int $endPercent = 90): void
