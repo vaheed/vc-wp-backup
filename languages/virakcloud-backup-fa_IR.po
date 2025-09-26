@@ -87,9 +87,6 @@ msgstr "فایل‌ها = فقط wp-content (قالب‌ها، افزونه‌ه
 msgid "incremental = database + files changed since the last backup."
 msgstr "افزایشی = پایگاه‌داده + فایل‌های تغییر کرده از زمان آخرین پشتیبان."
 
-msgid "Restore"
-msgstr "بازیابی"
-
 msgid "Dry Run (extract and validate only)"
 msgstr "اجرای آزمایشی (فقط استخراج و اعتبارسنجی)"
 
@@ -137,4 +134,3 @@ msgstr "برای دیدن پشتیبان‌های اخیر، در تنظیمات
 
 msgid "S3 bucket is not configured. Please set it in Settings."
 msgstr "سطل S3 پیکربندی نشده است. لطفاً در تنظیمات آن را مشخص کنید."
-
