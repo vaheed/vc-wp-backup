@@ -902,8 +902,12 @@ class Admin
             $level = isset($_POST['level']) ? sanitize_text_field((string) $_POST['level']) : '';
         }
         $limit = isset($_GET['lines']) ? (int) $_GET['lines'] : (isset($_POST['lines']) ? (int) $_POST['lines'] : 10);
-        if ($limit < 1) { $limit = 1; }
-        if ($limit > 200) { $limit = 200; }
+        if ($limit < 1) {
+            $limit = 1;
+        }
+        if ($limit > 200) {
+            $limit = 200;
+        }
         $lines = $level !== '' ? $this->logger->tailFiltered($limit, $level) : $this->logger->tail($limit);
         wp_send_json(['lines' => $lines]);
     }
