@@ -182,7 +182,8 @@ class Admin
             // Upload to S3
             $s3 = (new S3ClientFactory($this->settings, $this->logger))->create();
             $bucket = $this->settings->get()['s3']['bucket'];
-            $key = 'vcbk-test/' . basename($archPath);
+            $sitePrefix = (new \VirakCloud\Backup\Settings())->sitePrefix();
+            $key = 'vcbk-test/' . $sitePrefix . '/' . basename($archPath);
             $s3->putObject(['Bucket' => $bucket, 'Key' => $key, 'Body' => fopen($archPath, 'rb')]);
             $this->logger->info('test_backup_complete', [
                 'ms' => (int) round($elapsed * 1000),
@@ -245,7 +246,13 @@ class Admin
         } else {
             try {
                 $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
-                $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
+                $sitePrefix = (new \VirakCloud\Backup\Settings())->sitePrefix();
+                $prefix = 'backups/' . $sitePrefix . '/';
+                $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => $prefix, 'MaxKeys' => 1000]);
+                if (empty($res['Contents'])) {
+                    // Fallback to legacy prefix without site subdir
+                    $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
+                }
                 $items = [];
                 foreach ((array) ($res['Contents'] ?? []) as $obj) {
                     $key = (string) $obj['Key'];
@@ -592,7 +599,8 @@ class Admin
         }
         try {
             $client = (new S3ClientFactory($this->settings, $this->logger))->create();
-            $prefix = 'backups/';
+            $sitePrefix = (new \VirakCloud\Backup\Settings())->sitePrefix();
+            $prefix = 'backups/' . $sitePrefix . '/';
             $items = [];
             $params = ['Bucket' => $bucket, 'Prefix' => $prefix, 'MaxKeys' => 1000];
             do {
@@ -609,6 +617,24 @@ class Admin
                 }
                 $params['ContinuationToken'] = isset($res['IsTruncated']) && $res['IsTruncated'] ? $res['NextContinuationToken'] : null;
             } while (!empty($params['ContinuationToken']));
+            if (empty($items)) {
+                // Fallback to legacy flat prefix
+                $params = ['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000];
+                do {
+                    $res = $client->listObjectsV2($params);
+                    foreach ((array) ($res['Contents'] ?? []) as $obj) {
+                        $key = (string) $obj['Key'];
+                        if (str_contains($key, 'backup-') && (str_ends_with($key, '.zip') || str_ends_with($key, '.tar.gz'))) {
+                            $items[] = [
+                                'key' => $key,
+                                'size' => (int) $obj['Size'],
+                                'modified' => (string) ($obj['LastModified']->format('c') ?? ''),
+                            ];
+                        }
+                    }
+                    $params['ContinuationToken'] = isset($res['IsTruncated']) && $res['IsTruncated'] ? $res['NextContinuationToken'] : null;
+                } while (!empty($params['ContinuationToken']));
+            }
             usort(
                 $items,
                 function ($a, $b) {
@@ -618,7 +644,7 @@ class Admin
 
             $selectedKey = isset($_GET['key']) ? (string) $_GET['key'] : '';
             if (empty($items)) {
-                echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('No backups found in S3 prefix backups/.', 'virakcloud-backup') . '</p>';
+                echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('No backups found for this site.', 'virakcloud-backup') . '</p>';
             } else {
                 echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
                 wp_nonce_field('vcbk_run_restore');

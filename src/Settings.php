@@ -86,6 +86,21 @@ class Settings
     }
 
     /**
+     * Compute a stable site-specific S3 prefix component.
+     * Uses host and path from home_url plus a short hash for uniqueness.
+     */
+    public function sitePrefix(): string
+    {
+        $url = home_url('/');
+        $host = (string) parse_url($url, PHP_URL_HOST);
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $slug = trim($host . str_replace('/', '-', rtrim($path, '/')), '-');
+        $slug = preg_replace('/[^a-zA-Z0-9\-_.]/', '-', $slug) ?: 'site';
+        $hash = substr(hash('sha1', $url), 0, 8);
+        return $slug . '-' . $hash;
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */

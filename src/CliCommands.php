@@ -90,7 +90,7 @@ class CliCommands
     /**
      * Full-site restore. Usage:
      *   wp vcbk restore-full --file=/path/to/archive.zip [--no-preserve-plugin] [--dry-run]
-     *   wp vcbk restore-full --key=backups/backup-20250101-010101.zip [--no-preserve-plugin]
+     *   wp vcbk restore-full --key=backups/<site-prefix>/backup-20250101-010101.zip [--no-preserve-plugin]
      *
      * @param string[] $args
      * @param array<string, string> $assoc

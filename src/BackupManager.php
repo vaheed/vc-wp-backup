@@ -41,8 +41,8 @@ class BackupManager
         wp_mkdir_p($work);
         wp_mkdir_p($archives);
 
-        // Single S3 directory for all backups with datetime-based filenames
-        $keyPrefix = 'backups/';
+        // Site-scoped directory inside the bucket to avoid collisions across sites
+        $keyPrefix = 'backups/' . $this->settings->sitePrefix() . '/';
 
         $uuid = Uuid::uuid4()->toString();
         $dateStamp = gmdate('Ymd-His');
