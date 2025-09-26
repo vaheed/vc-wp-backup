@@ -620,8 +620,8 @@ class Admin
         echo '<a class="button vcbk-btn vcbk-btn--sm" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
         echo '</div>';
         echo '</div>';
-        echo '<div class="vcbk-collapsible vcbk-collapsed">';
-        echo '<div class="vcbk-collapsible-header" role="button" aria-expanded="false">' . esc_html__('Toggle Logs', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-collapsible">';
+        echo '<div class="vcbk-collapsible-header" role="button" aria-expanded="true">' . esc_html__('Toggle Logs', 'virakcloud-backup') . '</div>';
         echo '<div class="vcbk-collapsible-content">';
         echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
         echo '</div></div>';
@@ -715,12 +715,7 @@ class Admin
                 wp_nonce_field('vcbk_run_restore');
                 echo '<input type="hidden" name="action" value="vcbk_run_restore" />';
                 echo '<label style="display:block;margin-bottom:6px">' . esc_html__('Backup', 'virakcloud-backup') . '</label>';
-                $selectId = 'vcbk-restore-select';
-                echo '<div class="vcbk-select-search">';
-                echo '<span class="dashicons dashicons-search"></span>';
-                echo '<input type="search" class="vcbk-input" placeholder="' . esc_attr__('Search backups…', 'virakcloud-backup') . '" data-target="#' . esc_attr($selectId) . '" />';
-                echo '</div>';
-                echo '<select id="' . esc_attr($selectId) . '" name="key" class="regular-text" style="min-width:420px">';
+                echo '<select name="key" class="regular-text" style="min-width:420px">';
                 foreach ($items as $it) {
                     $label = $it['key'] . ' (' . size_format($it['size']) . ')';
                     $sel = selected($selectedKey, $it['key'], false);

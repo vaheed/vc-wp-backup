@@ -1,5 +1,5 @@
 /* VirakCloud Backup – modern admin UI */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Removed webfont import; use Tahoma everywhere per requirement */
 
 :root{
   --vcbk-primary:#2563eb; /* blue-600 */
@@ -14,7 +14,7 @@
   --vcbk-danger:#dc2626;
 }
 
-.vcbk-wrap{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';color:var(--vcbk-text)}
+.vcbk-wrap{font-family:Tahoma,Arial,sans-serif;color:var(--vcbk-text)}
 .vcbk-wrap .wrap > h1{font-weight:700;letter-spacing:-.01em}
 
 /* Cards */
@@ -97,7 +97,7 @@
 .vcbk-collapsible > .vcbk-collapsible-content{padding:12px;background:#0b0d0e}
 .vcbk-collapsed .vcbk-collapsible-content{display:none}
 
-pre.vcbk-log{max-height:260px;overflow:auto;background:#0b0d0e;color:#eaeef3;padding:0;border-radius:8px;border:1px solid #1f2326;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre.vcbk-log{max-height:260px;overflow:auto;background:#0b0d0e;color:#eaeef3;padding:0;border-radius:8px;border:1px solid #1f2326;font-size:12px;line-height:1.5;font-family:Tahoma,Arial,sans-serif}
 .vcbk-log-line{padding:4px 8px;white-space:pre-wrap}
 .vcbk-log-line.level-info{color:#a3b1c6}
 .vcbk-log-line.level-debug{color:#86b6ff}
