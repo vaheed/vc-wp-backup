@@ -869,7 +869,7 @@ class Admin
         echo '</form>';
         // Live log viewer controls (align with plugin-ui.js expectations)
         echo '<p style="margin-top:10px"><button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button></p>';
-        $lines = $this->logger->tailFiltered(500, $level ?: null);
+        $lines = $this->logger->tailFiltered(10, $level ?: null);
         echo '<pre id="vcbk-log" class="vcbk-log">' . esc_html(implode("\n", $lines)) . '</pre>';
         echo '</div>';
     }
@@ -901,7 +901,10 @@ class Admin
         if ($level === '') {
             $level = isset($_POST['level']) ? sanitize_text_field((string) $_POST['level']) : '';
         }
-        $lines = $level !== '' ? $this->logger->tailFiltered(400, $level) : $this->logger->tail(400);
+        $limit = isset($_GET['lines']) ? (int) $_GET['lines'] : (isset($_POST['lines']) ? (int) $_POST['lines'] : 10);
+        if ($limit < 1) { $limit = 1; }
+        if ($limit > 200) { $limit = 200; }
+        $lines = $level !== '' ? $this->logger->tailFiltered($limit, $level) : $this->logger->tail($limit);
         wp_send_json(['lines' => $lines]);
     }
 

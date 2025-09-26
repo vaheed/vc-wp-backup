@@ -71,7 +71,8 @@ class ArchiveBuilder
         // Cap progress at 70 after archiving
         if ($this->progressCurrent < 70) {
             $this->progressCurrent = 70;
-            $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
+            // Use plain strings to avoid WP i18n dependency in tests
+            $this->logger->setProgress(70, 'Upload Pending');
         }
 
         // Hash (may be expensive on large files; extend time limit but avoid WP-only calls here)
@@ -177,7 +178,7 @@ class ArchiveBuilder
         // Bump progress roughly every 500 files, up to 69%
         if ($this->processed % 500 === 0 && $this->progressCurrent < $this->progressMax) {
             $this->progressCurrent++;
-            $this->logger->setProgress($this->progressCurrent, __('Archiving Files', 'virakcloud-backup'));
+            $this->logger->setProgress($this->progressCurrent, 'Archiving Files');
         }
     }
 
