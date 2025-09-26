@@ -64,24 +64,46 @@ class Scheduler
     public function scheduleNext(): void
     {
         $cfg = $this->settings->get();
-        $interval = $cfg['schedule']['interval'] ?? 'weekly';
-        $start = $cfg['schedule']['start_time'] ?? '01:30';
-        // Compute next occurrence in site timezone
+        $interval = (string) ($cfg['schedule']['interval'] ?? 'weekly');
+        $start = (string) ($cfg['schedule']['start_time'] ?? '01:30');
+
         $tz = wp_timezone();
         $now = new \DateTimeImmutable('now', $tz);
-        [$h, $m] = array_map('intval', explode(':', $start));
-        $next = $now->setTime($h, $m, 0);
-        if ($next <= $now) {
-            $next = $next->modify('+1 day');
+        [$h, $m] = [1, 30];
+        if (preg_match('/^(\d{2}):(\d{2})$/', $start, $mm)) {
+            $h = (int) $mm[1];
+            $m = (int) $mm[2];
         }
-        // Normalize monthly/weekly
-        if ($interval === 'weekly') {
-            // Keep next as computed; WP-Cron uses recurrence
-        } elseif ($interval === 'monthly') {
-            // Next month same day/time
+
+        // Determine first run time
+        $next = $now;
+        $short = ['2h' => 2, '4h' => 4, '8h' => 8, '12h' => 12];
+        if (isset($short[$interval])) {
+            $next = $now->modify('+' . $short[$interval] . ' hours');
+        } else {
+            $first = $now->setTime($h, $m, 0);
+            if ($first <= $now) {
+                $first = $first->modify('+1 day');
+            }
+            if ($interval === 'weekly') {
+                // keep computed; recur weekly
+                $next = $first;
+            } elseif ($interval === 'fortnightly') {
+                $next = $first; // recur every 14 days
+            } elseif ($interval === 'monthly') {
+                $next = $first; // recur every ~30 days via custom schedule
+            } else { // daily
+                $next = $first;
+                $interval = 'daily';
+            }
         }
+
+        // Schedule the event if not already present
         wp_schedule_event($next->getTimestamp(), $interval, 'vcbk_cron_run');
-        $this->logger->info('scheduled', ['at' => $next->format(DATE_ATOM), 'interval' => $interval]);
+        $this->logger->info('scheduled', [
+            'at' => $next->format(DATE_ATOM),
+            'interval' => $interval,
+        ]);
     }
 
     public function unschedule(): void

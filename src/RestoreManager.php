@@ -25,7 +25,10 @@ class RestoreManager
         }
         $cfg = $this->settings->get();
         $client = (new S3ClientFactory($this->settings, $this->logger))->create();
-        $bucket = $cfg['s3']['bucket'];
+        $bucket = (string) ($cfg['s3']['bucket'] ?? '');
+        if ($bucket === '') {
+            throw new \RuntimeException(__('S3 bucket is not configured. Please set it in Settings.', 'virakcloud-backup'));
+        }
 
         $upload = wp_get_upload_dir();
         $restoreDir = trailingslashit($upload['basedir']) . 'virakcloud-backup/restore';
@@ -100,10 +103,12 @@ class RestoreManager
 
         if ($dry) {
             $this->logger->info('restore_full_dry_run_complete', ['srcRoot' => $srcRoot]);
+            $this->logger->setProgress(100, __('Dry run complete', 'virakcloud-backup'));
             return;
         }
 
         // Import DB if present at root of extracted dir
+        $preserved = $this->settings->get();
         $sqlPaths = array_merge(
             glob($tmpDir . '/*.sql') ?: [],
             glob($srcRoot . '/*.sql') ?: []
@@ -111,6 +116,9 @@ class RestoreManager
         if (!empty($sqlPaths)) {
             $this->logger->setProgress(45, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlPaths[0]);
+            // Preserve current plugin settings across restore
+            update_option('vcbk_settings', $preserved, false);
+            $this->logger->info('restore_settings_preserved');
         }
 
         $this->logger->setProgress(65, __('Restoring Files', 'virakcloud-backup'));
@@ -205,20 +213,34 @@ class RestoreManager
 
         if ($dry) {
             $this->logger->info('restore_dry_run_complete');
+            $this->logger->setProgress(100, __('Dry run complete', 'virakcloud-backup'));
             return;
         }
 
         // Import DB if present
+        $preserved = $this->settings->get();
         $sqlFiles = glob($tmpDir . '/*.sql');
         if ($sqlFiles) {
             $this->logger->setProgress(55, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlFiles[0]);
+            update_option('vcbk_settings', $preserved, false);
+            $this->logger->info('restore_settings_preserved');
         }
 
+        // Locate wp-content inside extracted archive (may be nested under site root name)
+        $srcRoot = $tmpDir;
+        if (!file_exists($srcRoot . '/wp-content') && is_dir($srcRoot)) {
+            foreach (glob($srcRoot . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+                if (file_exists($dir . '/wp-content')) {
+                    $srcRoot = $dir;
+                    break;
+                }
+            }
+        }
         // Copy files over cautiously
         $content = WP_CONTENT_DIR;
         $this->logger->setProgress(70, __('Restoring Files', 'virakcloud-backup'));
-        $this->recurseCopy($tmpDir . '/wp-content', $content);
+        $this->recurseCopy($srcRoot . '/wp-content', $content);
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         $this->logger->info('restore_complete');

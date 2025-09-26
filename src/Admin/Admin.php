@@ -256,9 +256,11 @@ class Admin
         // Recent backups (from S3)
         echo '<div class="vcbk-card">';
         echo '<h2 style="margin-top:0">' . esc_html__('Recent Backups', 'virakcloud-backup') . '</h2>';
-        try {
+        $bucket = (string) ($this->settings->get()['s3']['bucket'] ?? '');
+        if ($bucket === '') {
+            echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Configure your S3 bucket in Settings to see recent backups.', 'virakcloud-backup') . '</p>';
+        } else try {
             $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
-            $bucket = $this->settings->get()['s3']['bucket'];
             $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
             $items = [];
             foreach ((array) ($res['Contents'] ?? []) as $obj) {
@@ -511,6 +513,13 @@ class Admin
         echo '<label style="margin-left:10px"><input type="checkbox" name="upload_to_s3" /> ' . esc_html__('Upload to S3 after backup', 'virakcloud-backup') . '</label> ';
         echo '<button class="button button-primary" style="margin-left:10px">' . esc_html__('Run Backup', 'virakcloud-backup') . '</button>';
         echo '</form>';
+        echo '<p class="vcbk-muted" style="margin-top:8px;max-width:780px">'
+            . '<strong>' . esc_html__('Types:', 'virakcloud-backup') . '</strong> '
+            . esc_html__('full = database + all WordPress files (core, wp-content). ', 'virakcloud-backup')
+            . esc_html__('db = only the database export (.sql). ', 'virakcloud-backup')
+            . esc_html__('files = only wp-content (themes, plugins, uploads). ', 'virakcloud-backup')
+            . esc_html__('incremental = database + files changed since the last backup.', 'virakcloud-backup')
+            . '</p>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
         wp_nonce_field('vcbk_run_test');
         echo '<input type="hidden" name="action" value="vcbk_run_test" />';
@@ -566,9 +575,14 @@ class Admin
                 'virakcloud-backup'
             )
             . '</p>';
+        $bucket = (string) ($this->settings->get()['s3']['bucket'] ?? '');
+        if ($bucket === '') {
+            echo '<div class="vcbk-card"><p class="vcbk-warn vcbk-alert">' . esc_html__('S3 bucket is not configured. Please set it in Settings.', 'virakcloud-backup') . '</p></div>';
+            echo '</div>';
+            return;
+        }
         try {
             $client = (new S3ClientFactory($this->settings, $this->logger))->create();
-            $bucket = $this->settings->get()['s3']['bucket'];
             $prefix = 'backups/';
             $items = [];
             $params = ['Bucket' => $bucket, 'Prefix' => $prefix, 'MaxKeys' => 1000];

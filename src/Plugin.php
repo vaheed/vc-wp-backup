@@ -28,9 +28,15 @@ class Plugin
         }
 
         add_action('init', [$this, 'registerTextdomain']);
-        add_action('cron_schedules', [$this->scheduler, 'registerIntervals']);
+        // Register custom cron schedules
+        add_filter('cron_schedules', [$this->scheduler, 'registerIntervals']);
         add_action('vcbk_cron_run', [$this, 'runScheduledBackup']);
         add_action('vcbk_cron_health', [$this->health, 'cronHealth']);
+
+        // Ensure our scheduled event exists
+        if (!wp_next_scheduled('vcbk_cron_run')) {
+            $this->scheduler->scheduleNext();
+        }
 
         // Register REST endpoints for progress/log tail in a future iteration.
     }

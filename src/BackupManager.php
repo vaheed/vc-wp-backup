@@ -38,7 +38,9 @@ class BackupManager
 
         $uuid = Uuid::uuid4()->toString();
         $dateStamp = gmdate('Ymd-His');
-        $archiveName = 'backup-' . $dateStamp . '.' . ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
+        $typeSlug = in_array($type, ['full','db','files','incremental'], true) ? $type : 'full';
+        $ext = ($cfg['backup']['archive_format'] === 'tar.gz' ? 'tar.gz' : 'zip');
+        $archiveName = 'backup-' . $typeSlug . '-' . $dateStamp . '.' . $ext;
         $archivePath = trailingslashit($archives) . $archiveName;
 
         $this->logger->info('backup_start', ['type' => $type, 'archive' => $archiveName]);
@@ -72,7 +74,16 @@ class BackupManager
         // Build archive
         $arch = new ArchiveBuilder($this->logger);
         $this->logger->setProgress(40, __('Archiving Files', 'virakcloud-backup'));
-        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude);
+        $options = [];
+        if ($type === 'incremental') {
+            $last = get_option('vcbk_last_backup');
+            $cutoff = is_string($last) ? strtotime($last) : false;
+            if ($cutoff !== false) {
+                $options['modifiedSince'] = (int) $cutoff;
+                $this->logger->debug('incremental_cutoff', ['ts' => $cutoff]);
+            }
+        }
+        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude, $options);
         $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
         $this->checkControl();
 

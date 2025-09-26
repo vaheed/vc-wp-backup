@@ -14,13 +14,14 @@ class ArchiveBuilder
     /**
      * Build an archive of the given paths.
      *
-     * @param string $format zip|tar.gz
-     * @param string[] $paths Absolute paths to include
-     * @param string $output Absolute path of the archive file to create
+     * @param string   $format  zip|tar.gz
+     * @param string[] $paths   Absolute paths to include
+     * @param string   $output  Absolute path of the archive file to create
      * @param string[] $exclude Relative path patterns to exclude
+     * @param array{modifiedSince?:int}|array{} $options Optional tuning (e.g., modifiedSince for incremental)
      * @return array<string, mixed>
      */
-    public function build(string $format, array $paths, string $output, array $exclude = []): array
+    public function build(string $format, array $paths, string $output, array $exclude = [], array $options = []): array
     {
         $this->logger->debug('archive_build_start', ['format' => $format, 'output' => $output]);
         $format = $format === 'tar.gz' ? 'tar.gz' : 'zip';
@@ -29,6 +30,7 @@ class ArchiveBuilder
             'files' => [],
             'sha256' => null,
         ];
+        $modifiedSince = isset($options['modifiedSince']) ? (int) $options['modifiedSince'] : null;
 
         if ($format === 'zip') {
             $zip = new \ZipArchive();
@@ -38,7 +40,7 @@ class ArchiveBuilder
             foreach ($paths as $base) {
                 $base = rtrim($base, '/');
                 if (is_dir($base)) {
-                    $this->addDirToZip($zip, $base, $exclude);
+                    $this->addDirToZip($zip, $base, $exclude, $modifiedSince);
                 } elseif (is_file($base)) {
                     $this->addFileToZip($zip, $base, $exclude);
                 }
@@ -50,7 +52,7 @@ class ArchiveBuilder
             $phar = new \PharData($tar);
             foreach ($paths as $base) {
                 if (is_dir($base)) {
-                    $this->addDirToTar($phar, $base, $exclude);
+                    $this->addDirToTar($phar, $base, $exclude, $modifiedSince);
                 } elseif (is_file($base)) {
                     $this->addFileToTar($phar, $base, $exclude);
                 }
@@ -70,7 +72,7 @@ class ArchiveBuilder
     /**
      * @param string[] $exclude
      */
-    private function addDirToZip(\ZipArchive $zip, string $base, array $exclude): void
+    private function addDirToZip(\ZipArchive $zip, string $base, array $exclude, ?int $modifiedSince = null): void
     {
         $baseName = basename($base);
         $iterator = new \RecursiveIteratorIterator(
@@ -78,6 +80,12 @@ class ArchiveBuilder
         );
         foreach ($iterator as $file) {
             $path = (string) $file;
+            if ($modifiedSince !== null && is_file($path)) {
+                $mt = @filemtime($path);
+                if ($mt !== false && $mt < $modifiedSince) {
+                    continue;
+                }
+            }
             $rel = $baseName . '/' . ltrim(substr($path, strlen($base)), '/');
             if ($this->isExcluded($rel, $exclude)) {
                 continue;
@@ -93,7 +101,7 @@ class ArchiveBuilder
     /**
      * @param string[] $exclude
      */
-    private function addDirToTar(\PharData $phar, string $base, array $exclude): void
+    private function addDirToTar(\PharData $phar, string $base, array $exclude, ?int $modifiedSince = null): void
     {
         $baseName = basename($base);
         $iterator = new \RecursiveIteratorIterator(
@@ -101,6 +109,12 @@ class ArchiveBuilder
         );
         foreach ($iterator as $file) {
             $path = (string) $file;
+            if ($modifiedSince !== null && is_file($path)) {
+                $mt = @filemtime($path);
+                if ($mt !== false && $mt < $modifiedSince) {
+                    continue;
+                }
+            }
             $rel = $baseName . '/' . ltrim(substr($path, strlen($base)), '/');
             if ($this->isExcluded($rel, $exclude)) {
                 continue;
