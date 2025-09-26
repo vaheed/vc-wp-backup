@@ -215,7 +215,7 @@ class Admin
 
     public function renderDashboard(): void
     {
-        echo '<div class="wrap">';
+        echo '<div class="wrap vcbk-wrap">';
         echo '<h1>' . esc_html__('VirakCloud Backup', 'virakcloud-backup') . '</h1>';
         // Summary
         $last = get_option('vcbk_last_backup', '—');
@@ -369,7 +369,7 @@ class Admin
     public function renderSettings(): void
     {
         $cfg = $this->settings->get();
-        echo '<div class="wrap"><h1>' . esc_html__('Settings', 'virakcloud-backup') . '</h1>';
+        echo '<div class="wrap vcbk-wrap"><h1>' . esc_html__('Settings', 'virakcloud-backup') . '</h1>';
         if (!empty($_GET['message'])) {
             echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
         }
@@ -443,12 +443,12 @@ class Admin
         echo '<tr><th>' . esc_html__('Next run (preview)', 'virakcloud-backup') . '</th><td><em id="vcbk-next-run-preview"></em></td></tr>';
         echo '</table>';
 
-        echo '<p><button class="button">' . esc_html__('Save Settings', 'virakcloud-backup') . '</button> ';
+        echo '<p><button class="button button-primary vcbk-btn vcbk-btn--primary">' . esc_html__('Save Settings', 'virakcloud-backup') . '</button> ';
         $testUrl = wp_nonce_url(
             admin_url('admin-post.php?action=vcbk_test_s3'),
             'vcbk_test_s3'
         );
-        echo '<a class="button" href="' . esc_url($testUrl) . '">'
+        echo '<a class="button vcbk-btn vcbk-btn--secondary" href="' . esc_url($testUrl) . '">'
             . esc_html__('Test S3 Connection', 'virakcloud-backup')
             . '</a></p>';
         echo '</form></div>';
@@ -459,7 +459,7 @@ class Admin
         $cfg = $this->settings->get();
         $schedule = $cfg['schedule'];
         $intervals = ['2h','4h','8h','12h','daily','weekly','fortnightly','monthly'];
-        echo '<div class="wrap"><h1>' . esc_html__('Schedules', 'virakcloud-backup') . '</h1>';
+        echo '<div class="wrap vcbk-wrap"><h1>' . esc_html__('Schedules', 'virakcloud-backup') . '</h1>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('vcbk_save_settings');
         echo '<input type="hidden" name="action" value="vcbk_save_settings" />';
@@ -498,7 +498,7 @@ class Admin
         );
         echo '</td></tr>';
         echo '<tr><th>' . esc_html__('Next run (preview)', 'virakcloud-backup') . '</th><td><em id="vcbk-next-run-preview"></em></td></tr>';
-        echo '</table><p><button class="button button-primary">'
+        echo '</table><p><button class="button button-primary vcbk-btn vcbk-btn--primary">'
             . esc_html__('Save Schedule', 'virakcloud-backup')
             . '</button></p>';
         echo '<p style="color:#555">' . esc_html__('Tip: Configure a real cron to call wp-cron.php every 5 minutes for reliability.', 'virakcloud-backup') . '</p>';
@@ -508,7 +508,7 @@ class Admin
 
     public function renderBackups(): void
     {
-        echo '<div class="wrap"><h1>' . esc_html__('Backups', 'virakcloud-backup') . '</h1>';
+        echo '<div class="wrap vcbk-wrap"><h1>' . esc_html__('Backups', 'virakcloud-backup') . '</h1>';
         if (!empty($_GET['message'])) {
             echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
         }
@@ -526,7 +526,7 @@ class Admin
         }
         echo '</select></label> ';
         echo '<label style="margin-left:10px"><input type="checkbox" name="upload_to_s3" /> ' . esc_html__('Upload to S3 after backup', 'virakcloud-backup') . '</label> ';
-        echo '<button class="button button-primary" style="margin-left:10px">' . esc_html__('Run Backup', 'virakcloud-backup') . '</button>';
+        echo '<button class="button button-primary vcbk-btn vcbk-btn--primary" style="margin-left:10px">' . esc_html__('Run Backup', 'virakcloud-backup') . '</button>';
         echo '</form>';
         echo '<p class="vcbk-muted" style="margin-top:8px;max-width:780px">'
             . '<strong>' . esc_html__('Types:', 'virakcloud-backup') . '</strong> '
@@ -538,15 +538,20 @@ class Admin
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
         wp_nonce_field('vcbk_run_test');
         echo '<input type="hidden" name="action" value="vcbk_run_test" />';
-        echo '<button class="button">' . esc_html__('Run Test Backup', 'virakcloud-backup') . '</button>';
+        echo '<button class="button vcbk-btn vcbk-btn--secondary">' . esc_html__('Run Test Backup', 'virakcloud-backup') . '</button>';
         echo '</form>';
-        // Upload a backup file to S3 for safekeeping
+        // Upload a backup file to S3 for safekeeping (drag & drop)
         echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
         wp_nonce_field('vcbk_upload_backup');
         echo '<input type="hidden" name="action" value="vcbk_upload_backup" />';
-        echo '<label>' . esc_html__('Upload backup to S3', 'virakcloud-backup') . ' ';
-        echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" /></label> ';
-        echo '<button class="button">' . esc_html__('Upload', 'virakcloud-backup') . '</button>';
+        echo '<div class="vcbk-dropzone" tabindex="0">';
+        echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" />';
+        echo '<div class="vcbk-dz-title">' . esc_html__('Upload backup to S3', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-dz-sub">' . esc_html__('Drag & drop or click to select a backup file (.zip/.tar/.gz)', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-dz-file"></div>';
+        echo '<div class="vcbk-dz-progress"><div class="bar"></div></div>';
+        echo '</div>';
+        echo '<p style="margin-top:10px"><button class="button vcbk-btn vcbk-btn--secondary">' . esc_html__('Upload', 'virakcloud-backup') . '</button></p>';
         echo '</form>';
         echo '</div>';
         $test = get_option('vcbk_last_test');
@@ -565,31 +570,48 @@ class Admin
         echo '<div class="vcbk-card">';
         echo '<h2 style="margin-top:0">' . esc_html__('Progress', 'virakcloud-backup') . '</h2>';
         echo '<div id="vcbk-progress" class="vcbk-progress"><div id="vcbk-progress-bar" class="vcbk-progress-bar"></div></div>';
+        echo '<div id="vcbk-stages" class="vcbk-stages">';
+        echo '<div class="vcbk-stage" data-step="archive">' . esc_html__('Archiving', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-stage" data-step="upload">' . esc_html__('Uploading', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-stage" data-step="complete">' . esc_html__('Complete', 'virakcloud-backup') . '</div>';
+        echo '</div>';
         echo '<p id="vcbk-progress-stage" class="vcbk-muted" style="margin-top:6px"></p>';
         echo '<p class="vcbk-actions">';
-        echo '<button class="button" id="vcbk-pause">' . esc_html__('Pause', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-resume">' . esc_html__('Resume', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-cancel">' . esc_html__('Cancel', 'virakcloud-backup') . '</button>';
+        echo '<button class="button vcbk-btn vcbk-btn--secondary" id="vcbk-pause">' . esc_html__('Pause', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--secondary" id="vcbk-resume">' . esc_html__('Resume', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--secondary" id="vcbk-cancel">' . esc_html__('Cancel', 'virakcloud-backup') . '</button>';
         echo '</p>';
         echo '</div>';
 
         echo '<div class="vcbk-card">';
         echo '<h2 style="margin-top:0">' . esc_html__('Live Logs', 'virakcloud-backup') . '</h2>';
         $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
-        echo '<p class="vcbk-actions">';
-        echo '<button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-toggle-scroll">' . esc_html__('Stop Auto-Scroll', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
-        echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
-        echo '</p>';
+        echo '<div class="vcbk-log-toolbar">';
+        echo '<div class="vcbk-tabs" role="tablist">';
+        echo '<button class="vcbk-tab" data-level="" aria-selected="true">' . esc_html__('All', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="info" aria-selected="false">' . esc_html__('Info', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="debug" aria-selected="false">' . esc_html__('Debug', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="error" aria-selected="false">' . esc_html__('Errors', 'virakcloud-backup') . '</button>';
+        echo '</div>';
+        echo '<div style="margin-left:auto" class="vcbk-actions">';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-toggle-scroll">' . esc_html__('Stop Auto-Scroll', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
+        echo '<a class="button vcbk-btn vcbk-btn--sm" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="vcbk-collapsible vcbk-collapsed">';
+        echo '<div class="vcbk-collapsible-header" role="button" aria-expanded="false">' . esc_html__('Toggle Logs', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-collapsible-content">';
         echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
+        echo '</div></div>';
         echo '</div>';
         echo '</div>';
     }
 
     public function renderRestore(): void
     {
-        echo '<div class="wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
+        echo '<div class="wrap vcbk-wrap"><h1>' . esc_html__('Restore', 'virakcloud-backup') . '</h1>';
         if (!empty($_GET['message'])) {
             echo '<div class="notice notice-success"><p>' . esc_html((string) $_GET['message']) . '</p></div>';
         }
@@ -705,11 +727,18 @@ class Admin
                 echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
                 wp_nonce_field('vcbk_upload_restore');
                 echo '<input type="hidden" name="action" value="vcbk_upload_restore" />';
-                echo '<label>' . esc_html__('Upload backup', 'virakcloud-backup') . ' ';
-                echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" /></label> ';
-                echo '<label style="margin-left:10px"><input type="checkbox" name="dry_run" /> ' . esc_html__('Dry Run', 'virakcloud-backup') . '</label> ';
-                echo '<label style="margin-left:10px"><input type="checkbox" name="full_site" /> ' . esc_html__('Full site restore', 'virakcloud-backup') . '</label> ';
-                echo '<button class="button" style="margin-left:10px">' . esc_html__('Upload and Restore', 'virakcloud-backup') . '</button>';
+                echo '<div class="vcbk-dropzone" tabindex="0">';
+                echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" />';
+                echo '<div class="vcbk-dz-title">' . esc_html__('Upload backup', 'virakcloud-backup') . '</div>';
+                echo '<div class="vcbk-dz-sub">' . esc_html__('Drag & drop or click to select a backup file to restore (.zip/.tar/.gz)', 'virakcloud-backup') . '</div>';
+                echo '<div class="vcbk-dz-file"></div>';
+                echo '<div class="vcbk-dz-progress"><div class="bar"></div></div>';
+                echo '</div>';
+                echo '<div style="margin-top:10px">';
+                echo '<label style="margin-right:10px"><input type="checkbox" name="dry_run" /> ' . esc_html__('Dry Run', 'virakcloud-backup') . '</label> ';
+                echo '<label style="margin-right:10px"><input type="checkbox" name="full_site" /> ' . esc_html__('Full site restore', 'virakcloud-backup') . '</label> ';
+                echo '<button class="button vcbk-btn vcbk-btn--secondary" style="margin-left:10px">' . esc_html__('Upload and Restore', 'virakcloud-backup') . '</button>';
+                echo '</div>';
                 echo '</form>';
             }
         } catch (\Throwable $e) {
@@ -720,15 +749,32 @@ class Admin
         echo '<div class="vcbk-card">';
         echo '<h2 style="margin-top:0">' . esc_html__('Progress', 'virakcloud-backup') . '</h2>';
         echo '<div id="vcbk-progress" class="vcbk-progress"><div id="vcbk-progress-bar" class="vcbk-progress-bar"></div></div>';
+        echo '<div id="vcbk-stages" class="vcbk-stages">';
+        echo '<div class="vcbk-stage" data-step="archive">' . esc_html__('Archiving', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-stage" data-step="upload">' . esc_html__('Uploading', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-stage" data-step="complete">' . esc_html__('Complete', 'virakcloud-backup') . '</div>';
+        echo '</div>';
         echo '<p id="vcbk-progress-stage" class="vcbk-muted" style="margin-top:6px"></p>';
-        echo '<p class="vcbk-actions">';
-        echo '<button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-toggle-scroll">' . esc_html__('Stop Auto-Scroll', 'virakcloud-backup') . '</button> ';
-        echo '<button class="button" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
+        echo '<div class="vcbk-log-toolbar">';
+        echo '<div class="vcbk-tabs" role="tablist">';
+        echo '<button class="vcbk-tab" data-level="" aria-selected="true">' . esc_html__('All', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="info" aria-selected="false">' . esc_html__('Info', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="debug" aria-selected="false">' . esc_html__('Debug', 'virakcloud-backup') . '</button>';
+        echo '<button class="vcbk-tab" data-level="error" aria-selected="false">' . esc_html__('Errors', 'virakcloud-backup') . '</button>';
+        echo '</div>';
+        echo '<div style="margin-left:auto" class="vcbk-actions">';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-toggle-scroll">' . esc_html__('Stop Auto-Scroll', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
         $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
-        echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
-        echo '</p>';
+        echo '<a class="button vcbk-btn vcbk-btn--sm" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="vcbk-collapsible">';
+        echo '<div class="vcbk-collapsible-header" role="button" aria-expanded="true">' . esc_html__('Toggle Logs', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-collapsible-content">';
         echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
+        echo '</div></div>';
         echo '</div>';
 
         echo '</div>';
@@ -827,7 +873,7 @@ class Admin
             $step = max($step, 3);
         }
         $cfg = $this->settings->get();
-        echo '<div class="wrap">';
+        echo '<div class="wrap vcbk-wrap">';
         echo '<h1>' . esc_html__('VirakCloud Backup • Setup Wizard', 'virakcloud-backup') . '</h1>';
         echo '<ol class="vcbk-steps"><li>' . esc_html__('Connect Storage', 'virakcloud-backup') . '</li><li>' . esc_html__('Test Connection', 'virakcloud-backup') . '</li><li>' . esc_html__('Schedule', 'virakcloud-backup') . '</li></ol>';
         if ($step === 1) {
@@ -916,24 +962,31 @@ class Admin
 
     public function renderLogs(): void
     {
-        echo '<div class="wrap"><h1>' . esc_html__('Logs', 'virakcloud-backup') . '</h1>';
+        echo '<div class="wrap vcbk-wrap"><h1>' . esc_html__('Logs', 'virakcloud-backup') . '</h1>';
         $level = isset($_GET['level']) ? sanitize_text_field((string) $_GET['level']) : '';
-        echo '<form method="get" action="">';
-        echo '<input type="hidden" name="page" value="vcbk-logs" />';
-        echo '<label>' . esc_html__('Level', 'virakcloud-backup') . ' ';
-        echo '<select name="level">';
-        foreach (['', 'info', 'debug', 'error'] as $l) {
-            printf('<option value="%s" %s>%s</option>', esc_attr($l), selected($level, $l, false), esc_html($l === '' ? __('All', 'virakcloud-backup') : $l));
-        }
-        echo '</select></label> ';
-        echo '<button class="button">' . esc_html__('Filter', 'virakcloud-backup') . '</button> ';
         $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
-        echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
-        echo '</form>';
-        // Live log viewer controls (align with plugin-ui.js expectations)
-        echo '<p style="margin-top:10px"><button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button></p>';
-        $lines = $this->logger->tailFiltered(10, $level ?: null);
-        echo '<pre id="vcbk-log" class="vcbk-log">' . esc_html(implode("\n", $lines)) . '</pre>';
+        echo '<div class="vcbk-card">';
+        echo '<div class="vcbk-log-toolbar">';
+        echo '<div class="vcbk-tabs" role="tablist">';
+        $tabs = [
+            ['','All'], ['info','Info'], ['debug','Debug'], ['error','Errors']
+        ];
+        foreach ($tabs as $t) {
+            $is = ($level === $t[0]) ? 'true' : 'false';
+            printf('<button class="vcbk-tab" data-level="%s" aria-selected="%s">%s</button>', esc_attr($t[0]), esc_attr($is), esc_html__($t[1], 'virakcloud-backup'));
+        }
+        echo '</div>';
+        echo '<div style="margin-left:auto" class="vcbk-actions">';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button vcbk-btn vcbk-btn--sm" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
+        echo '<a class="button vcbk-btn vcbk-btn--sm" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="vcbk-collapsible">';
+        echo '<div class="vcbk-collapsible-header" role="button" aria-expanded="true">' . esc_html__('Toggle Logs', 'virakcloud-backup') . '</div>';
+        echo '<div class="vcbk-collapsible-content">';
+        echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
+        echo '</div></div>';
         echo '</div>';
     }
 
