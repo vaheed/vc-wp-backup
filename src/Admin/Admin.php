@@ -250,7 +250,8 @@ class Admin
         $bucket = (string) ($this->settings->get()['s3']['bucket'] ?? '');
         if ($bucket === '') {
             echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Configure your S3 bucket in Settings to see recent backups.', 'virakcloud-backup') . '</p>';
-        } else { try {
+        } else {
+            try {
             $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
             $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
             $items = [];
@@ -294,6 +295,7 @@ class Admin
             }
         } catch (\Throwable $e) {
             echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
+        }
         }
         }
         echo '</div>';
