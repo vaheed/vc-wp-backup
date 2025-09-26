@@ -486,6 +486,15 @@ class RestoreManager
             @unlink($archivePath);
             $this->logger->info('restore_cleanup_archive_deleted', ['file' => basename($archivePath)]);
         }
+        // Also purge any leftover restore files older than 6 hours to avoid bloat
+        if (is_dir($restoreBase)) {
+            foreach (glob($restoreBase . '/*') ?: [] as $f) {
+                $mt = @filemtime($f);
+                if ($mt !== false && $mt < time() - 6 * 3600) {
+                    @unlink($f);
+                }
+            }
+        }
     }
 
     private function rrmdir(string $dir): void

@@ -9,7 +9,12 @@
   function poll(){
     ajax(VCBK.ajax+"?action=vcbk_progress&_wpnonce="+VCBK.nonce).then(function(j){
       var p = j.percent||0; var stage=j.stage||''; var bar=q('#vcbk-progress-bar'); var txt=q('#vcbk-progress-stage');
-      if(bar){ bar.style.width = p+'%'; }
+      if(bar){
+        bar.style.width = p+'%';
+        bar.classList.remove('success','error');
+        if(p>=100 || /complete/i.test(stage)){ bar.classList.add('success'); }
+        if(/fail|error/i.test(stage)){ bar.classList.add('error'); }
+      }
       if(txt){ txt.textContent = (stage||'') + (stage?' ':'') + '('+p+'%)'; }
     }).catch(function(){});
     var levelSel = q('select[name="level"]');

@@ -40,6 +40,8 @@ class BackupManager
         $archives = trailingslashit($upload['basedir']) . 'virakcloud-backup/archives';
         wp_mkdir_p($work);
         wp_mkdir_p($archives);
+        // Proactively tidy up previous working artifacts
+        $this->cleanupWorkingDirs();
 
         // Site-scoped directory inside the bucket to avoid collisions across sites
         $keyPrefix = 'backups/' . $this->settings->sitePrefix() . '/';
@@ -181,6 +183,46 @@ class BackupManager
         update_option('vcbk_last_backup', current_time('mysql'));
 
         return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
+    }
+
+    private function cleanupWorkingDirs(): void
+    {
+        $upload = wp_get_upload_dir();
+        $base = trailingslashit($upload['basedir']) . 'virakcloud-backup';
+        $paths = [
+            $base . '/work',
+            $base . '/test',
+        ];
+        foreach ($paths as $dir) {
+            if (is_dir($dir)) {
+                $this->rrmdirContents($dir);
+            }
+        }
+        // Purge restore downloads older than 6 hours
+        $restore = $base . '/restore';
+        if (is_dir($restore)) {
+            foreach (glob($restore . '/*') ?: [] as $f) {
+                $mt = @filemtime($f);
+                if ($mt !== false && $mt < time() - 6 * 3600) {
+                    @unlink($f);
+                }
+            }
+        }
+    }
+
+    private function rrmdirContents(string $dir): void
+    {
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $p) {
+            if ($p->isDir()) {
+                @rmdir((string) $p);
+            } else {
+                @unlink((string) $p);
+            }
+        }
     }
 
     private function checkControl(): void

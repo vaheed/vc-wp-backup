@@ -218,12 +218,18 @@ class ArchiveBuilder
             $pattern = (string) $pattern;
             // If pattern looks like a glob or includes a slash, use fnmatch
             if (strpbrk($pattern, "*/?[") !== false || strpos($pattern, '/') !== false || strpos($pattern, '\\') !== false) {
-                if (fnmatch($pattern, $relativePath)) {
-                    return true;
-                }
-                $alt = '*/*' . ltrim($pattern, '/');
-                if (fnmatch($alt, $relativePath)) {
-                    return true;
+                $p = ltrim($pattern, '/');
+                $candidates = [
+                    $pattern,
+                    '*/' . $p,
+                    '*/' . $p . '/*',
+                    $p,
+                    $p . '/*',
+                ];
+                foreach ($candidates as $cand) {
+                    if (fnmatch($cand, $relativePath)) {
+                        return true;
+                    }
                 }
             } else {
                 // Treat as a path-segment match (avoid broad substring matches)
