@@ -44,6 +44,8 @@ class S3ClientFactory
             'http' => [
                 'connect_timeout' => 10,
                 'timeout' => 600,
+                // Never auto-decompress responses; we want raw bytes for exact checksums
+                'decode_content' => false,
             ],
         ];
         if ($this->logger) {

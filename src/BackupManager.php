@@ -136,6 +136,7 @@ class BackupManager
                     'Bucket' => $bucket,
                     'Key' => $keyManifest,
                     'Body' => $manifestJson,
+                    'ContentType' => 'application/json',
                 ]);
                 $this->logger->info('s3_upload_complete', [
                     'archive' => $keyArchive,

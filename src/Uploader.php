@@ -37,6 +37,7 @@ class Uploader
                 'Bucket' => $this->bucket,
                 'Key' => $key,
                 'Body' => fopen($filePath, 'rb'),
+                'ContentType' => self::guessContentType($filePath),
             ]);
             return ['parts' => 1];
         }
@@ -57,6 +58,7 @@ class Uploader
         $create = $this->client->createMultipartUpload([
             'Bucket' => $this->bucket,
             'Key' => $key,
+            'ContentType' => self::guessContentType($filePath),
         ]);
         $uploadId = $create['UploadId'];
         $parts = [];
@@ -122,5 +124,20 @@ class Uploader
         ]);
         $this->logger->info('upload_complete', ['key' => $key]);
         return ['parts' => count($parts)];
+    }
+
+    private static function guessContentType(string $filePath): string
+    {
+        $fn = strtolower($filePath);
+        if (str_ends_with($fn, '.zip')) {
+            return 'application/zip';
+        }
+        if (str_ends_with($fn, '.tar.gz') || str_ends_with($fn, '.tgz')) {
+            return 'application/gzip';
+        }
+        if (str_ends_with($fn, '.json')) {
+            return 'application/json';
+        }
+        return 'application/octet-stream';
     }
 }

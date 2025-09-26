@@ -32,7 +32,8 @@ class Settings
                     '*/node_modules/*',
                     'wp-content/uploads/virakcloud-backup',
                 ],
-                'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
+                // Default to tar.gz for maximum portability and restore reliability
+                'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'tar.gz',
                 'encryption' => [
                     'enabled' => false,
                     'cipher' => 'AES-256-GCM',

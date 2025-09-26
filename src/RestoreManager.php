@@ -51,6 +51,8 @@ class RestoreManager
             'Key' => $key,
             'SaveAs' => $local,
             '@http' => [
+                // Important: ensure raw bytes are written; do not auto-decompress
+                'decode_content' => false,
                 'progress' => function ($dlTotal, $dlTransferred) use ($start, $end) {
                     if ($dlTotal > 0) {
                         $pct = (int) floor($start + ($end - $start) * ($dlTransferred / max(1, $dlTotal)));
@@ -280,6 +282,7 @@ class RestoreManager
             'Key' => $key,
             'SaveAs' => $local,
             '@http' => [
+                'decode_content' => false,
                 'progress' => function ($dlTotal, $dlTransferred) use ($start, $end) {
                     if ($dlTotal > 0) {
                         $pct = (int) floor($start + ($end - $start) * ($dlTransferred / max(1, $dlTotal)));
