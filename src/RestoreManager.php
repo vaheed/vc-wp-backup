@@ -515,7 +515,9 @@ class RestoreManager
             $imported = [];
         }
         $has = function ($cfg): bool {
-            if (!is_array($cfg)) { return false; }
+            if (!is_array($cfg)) {
+                return false;
+            }
             $s3 = $cfg['s3'] ?? [];
             return !empty($s3['bucket']) && !empty($s3['access_key']) && !empty($s3['secret_key']);
         };
