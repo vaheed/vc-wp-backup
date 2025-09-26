@@ -1,4 +1,5 @@
 (function(){
+  var vcbkFailures = 0;
   function q(sel){ return document.querySelector(sel); }
   function qa(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
   function ajax(url){ return fetch(url, {credentials:'same-origin'}).then(function(r){return r.json();}); }
@@ -52,10 +53,11 @@
       }
       if(txt){ txt.textContent = (stage||'') + (stage?' ':'') + '('+p+'%)'; }
       updateStages(stage);
-    }).catch(function(){});
+      vcbkFailures = 0;
+    }).catch(function(err){ vcbkFailures++; if(vcbkFailures>2){ try{ console.warn('VCBK: progress poll failed', err); }catch(e){} }});
     var level = (window.vcbkLogLevel||'');
     var url = VCBK.ajax+"?action=vcbk_tail_logs&_wpnonce="+VCBK.nonce + (level?"&level="+encodeURIComponent(level):'') + "&lines=10";
-    ajax(url).then(function(j){ if(Array.isArray(j.lines)){ renderLogLines(j.lines); } }).catch(function(){});
+    ajax(url).then(function(j){ if(Array.isArray(j.lines)){ renderLogLines(j.lines); } vcbkFailures = 0; }).catch(function(err){ vcbkFailures++; if(vcbkFailures>2){ try{ console.warn('VCBK: log poll failed', err); }catch(e){} }});
   }
 
   function schedulePreview(){
@@ -77,6 +79,40 @@
     sel.addEventListener('change', compute);
     time.addEventListener('input', compute);
     compute();
+  }
+
+  function setupSearchableSelects(){
+    qa('.vcbk-select-search input[type="search"]').forEach(function(input){
+      var sel = document.querySelector(input.getAttribute('data-target'));
+      if(!sel) return;
+      function pick(){
+        var q = (input.value||'').toLowerCase();
+        if(!q){ return; }
+        var opts = sel.options; var best = -1; var bestIdx=-1;
+        for(var i=0;i<opts.length;i++){
+          var txt = (opts[i].text||'').toLowerCase();
+          var idx = txt.indexOf(q);
+          if(idx!==-1 && (best===-1 || idx<best)){ best=idx; bestIdx=i; }
+        }
+        if(bestIdx>=0){ sel.selectedIndex = bestIdx; }
+      }
+      input.addEventListener('input', pick);
+      input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); pick(); } });
+    });
+  }
+
+  function setupInlineValidation(){
+    qa('input[data-validate="url"]').forEach(function(inp){
+      function validate(){
+        var ok=true; try{ if(inp.value){ new URL(inp.value); } }catch(e){ ok=false; }
+        inp.classList.toggle('invalid', !ok);
+        var help = inp.nextElementSibling; if(help && help.classList.contains('vcbk-inline-help')){
+          help.textContent = ok? '': 'Invalid URL';
+        }
+      }
+      inp.addEventListener('input', validate);
+      validate();
+    });
   }
 
   function setupDropzones(){
@@ -111,6 +147,8 @@
   document.addEventListener('DOMContentLoaded', function(){
     schedulePreview();
     setupDropzones();
+    setupSearchableSelects();
+    setupInlineValidation();
     // Auto-start polling if a live log container exists on the page
     var logEl = q('#vcbk-log');
     var toggle = q('#vcbk-toggle-autorefresh');

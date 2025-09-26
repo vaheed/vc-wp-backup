@@ -2,7 +2,7 @@
   "name": "virakcloud/virakcloud-backup",
   "description": "Backup, restore, and migrate WordPress using VirakCloud S3-compatible storage.",
   "type": "wordpress-plugin",
-  "license": "GPL-2.0-or-later",
+  "license": "MIT",
   "require": {
     "php": ">=8.1",
     "aws/aws-sdk-php": "^3.300",
@@ -25,7 +25,8 @@
     "lint": "phpcs -p",
     "stan": "phpstan analyse",
     "test": "phpunit --colors=always",
-    "build-zip": "php -d phar.readonly=0 bin/build-zip.php"
+    "build-zip": "php -d phar.readonly=0 bin/build-zip.php",
+    "i18n:pot": "python3 tools/make_pot.py"
   },
   "config": {
     "allow-plugins": {

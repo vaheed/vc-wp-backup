@@ -12,402 +12,712 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Codex CLI\n"
 
-#: Admin Labels
-msgid "VirakCloud Backup"
-msgstr "پشتیبان‌گیر VirakCloud"
-
-msgid "VirakCloud Backup • Setup Wizard"
-msgstr "جادوگر راه‌اندازی • VirakCloud Backup"
-
-msgid "Backups"
-msgstr "نسخه‌های پشتیبان"
-
-msgid "Restore"
-msgstr "بازیابی"
-
-msgid "Settings"
-msgstr "تنظیمات"
-
-msgid "Run Backup"
-msgstr "اجرای پشتیبان‌گیری"
-
-msgid "Run Test Backup"
-msgstr "اجرای آزمون پشتیبان"
-
-msgid "Progress"
-msgstr "پیشرفت"
-
-msgid "Live Logs"
-msgstr "لاگ‌های لحظه‌ای"
-
-msgid "Start Auto-Refresh"
-msgstr "شروع به‌روزرسانی خودکار"
-
-msgid "Stop Auto-Refresh"
-msgstr "توقف به‌روزرسانی خودکار"
-
-msgid "Pause"
-msgstr "مکث"
-
-msgid "Resume"
-msgstr "ادامه"
-
-msgid "Cancel"
-msgstr "لغو"
-
-msgid "Website"
-msgstr "وب‌سایت"
-
-msgid "Documentation"
-msgstr "مستندات"
-msgid "Recent Backups"
-msgstr "پشتیبان‌های اخیر"
-
-msgid "Open Backups"
-msgstr "باز کردن صفحه پشتیبان‌ها"
-
-msgid "Next scheduled backup:"
-msgstr "زمان‌بندی بعدی پشتیبان:"
-
-msgid "Backup Type"
-msgstr "نوع پشتیبان"
-
-msgid "Types:"
-msgstr "انواع:"
-
-msgid "full = database + all WordPress files (core, wp-content). "
-msgstr "کامل = پایگاه‌داده + همه فایل‌های وردپرس (هسته و wp-content). "
-
-msgid "db = only the database export (.sql). "
-msgstr "بانک‌اطلاعاتی = فقط خروجی پایگاه‌داده (.sql). "
-
-msgid "files = only wp-content (themes, plugins, uploads). "
-msgstr "فایل‌ها = فقط wp-content (قالب‌ها، افزونه‌ها، آپلودها). "
-
-msgid "incremental = database + files changed since the last backup."
-msgstr "افزایشی = پایگاه‌داده + فایل‌های تغییر کرده از زمان آخرین پشتیبان."
-
-msgid "Dry Run (extract and validate only)"
-msgstr "اجرای آزمایشی (فقط استخراج و اعتبارسنجی)"
-
-msgid "Start Restore"
-msgstr "شروع بازیابی"
-
-msgid "Full site restore (replace WordPress core and wp-config.php)"
-msgstr "بازیابی کامل سایت (جایگزینی هسته وردپرس و wp-config.php)"
-
-msgid "Rewrite URLs"
-msgstr "بازنویسی آدرس‌ها"
-
-msgid "From"
-msgstr "از"
-
-msgid "To"
-msgstr "به"
-
-msgid "Rewriting URLs"
-msgstr "بازنویسی آدرس‌ها"
-
-msgid "Dry run complete"
-msgstr "اجرای آزمایشی به پایان رسید"
-
-msgid "Status"
-msgstr "وضعیت"
-
-msgid "Last backup"
-msgstr "آخرین پشتیبان"
-
-msgid "Next run"
-msgstr "اجرای بعدی"
-
-msgid "PHP memory_limit"
-msgstr "محدودیت حافظه PHP"
-
-msgid "Max execution time"
-msgstr "حداکثر زمان اجرا"
-
-msgid "Free disk space"
-msgstr "فضای خالی دیسک"
-
-msgid "VirakCloud S3 connectivity"
-msgstr "اتصال VirakCloud S3"
-
-msgid "Configure your S3 bucket in Settings to see recent backups."
-msgstr "برای دیدن پشتیبان‌های اخیر، در تنظیمات نام سطل S3 را تنظیم کنید."
-
-msgid "S3 bucket is not configured. Please set it in Settings."
-msgstr "سطل S3 پیکربندی نشده است. لطفاً در تنظیمات آن را مشخص کنید."
-
-# Settings page labels
-msgid "VirakCloud S3"
-msgstr "VirakCloud S3"
-
-msgid "Endpoint"
-msgstr "آدرس پایانی (Endpoint)"
-
-msgid "Region"
-msgstr "ناحیه"
-
-msgid "Bucket"
-msgstr "سطل"
-
-msgid "Access Key"
-msgstr "کلید دسترسی"
-
-msgid "Secret Key"
-msgstr "کلید مخفی"
-
-msgid "Path Style"
-msgstr "حالت مسیر (Path Style)"
-
-msgid "Use path-style addressing"
-msgstr "استفاده از آدرس‌دهی به‌صورت مسیر"
-
-msgid "Use path-style addressing (recommended)"
-msgstr "استفاده از آدرس‌دهی به‌صورت مسیر (توصیه‌شده)"
-
-msgid "Schedule"
-msgstr "زمان‌بندی"
-
-msgid "Interval"
-msgstr "بازه"
-
-msgid "Start Time"
-msgstr "زمان شروع"
-
-msgid "Catch up"
-msgstr "جبران"
-
-msgid "Run missed backups"
-msgstr "اجرای پشتیبان‌های از دست‌رفته"
-
-msgid "Next run (preview)"
-msgstr "اجرای بعدی (پیش‌نمایش)"
-
-msgid "Save Settings"
-msgstr "ذخیره تنظیمات"
-
-msgid "Test S3 Connection"
-msgstr "آزمون اتصال S3"
-
-msgid "Connect Storage"
-msgstr "اتصال ذخیره‌سازی"
-
-msgid "Continue"
-msgstr "ادامه"
-
-msgid "Step 1: S3 Settings"
-msgstr "گام ۱: تنظیمات S3"
-
-msgid "Test Connection"
-msgstr "آزمون اتصال"
-
-msgid "Run Connection Test"
-msgstr "اجرای آزمون اتصال"
-
-msgid "Step 2: Test Connection"
-msgstr "گام ۲: آزمون اتصال"
-
-msgid "Step 3: Schedule Backups"
-msgstr "گام ۳: زمان‌بندی پشتیبان‌ها"
-
-msgid "Finish Setup"
-msgstr "پایان راه‌اندازی"
-
-msgid "Setup is complete. You can run your first backup from the Backups tab."
-msgstr "راه‌اندازی کامل شد. می‌توانید اولین پشتیبان را از برگه «پشتیبان‌ها» اجرا کنید."
-
-msgid "We will try to access your bucket using the settings from Step 1."
-msgstr "با تنظیمات گام ۱ تلاش می‌کنیم به سطل شما دسترسی پیدا کنیم."
-
-# Backups page
-msgid "Backup"
-msgstr "پشتیبان"
-
-msgid "Mode"
-msgstr "حالت"
-
-msgid "Upload to S3 after backup"
-msgstr "پس از پشتیبان‌گیری در S3 بارگذاری شود"
-
-msgid "Last Test Result"
-msgstr "نتیجه آخرین آزمون"
-
-msgid "Latency %d ms, size %d bytes, checksum %s"
-msgstr "تأخیر %d میلی‌ثانیه، اندازه %d بایت، چک‌سام %s"
-
-
-# Logs page
-msgid "Logs"
-msgstr "لاگ‌ها"
-
-msgid "Level"
-msgstr "سطح"
-
+#: src/Admin/Admin.php:301
+msgid "Actions"
+msgstr ""
+
+#: src/Admin/Admin.php:611 src/Admin/Admin.php:793
 msgid "All"
 msgstr "همه"
 
-msgid "Filter"
-msgstr "فیلتر"
+#: src/Admin/Admin.php:594 src/Admin/Admin.php:786
+#, fuzzy
+msgid "Archiving"
+msgstr "در حال بایگانی پایگاه‌داده"
 
-msgid "Download"
-msgstr "دانلود"
-
-msgid "Stop Auto-Scroll"
-msgstr "توقف پیمایش خودکار"
-
-msgid "Copy"
-msgstr "کپی"
-
-msgid "No log file found"
-msgstr "هیچ پرونده لاگی یافت نشد"
-
-# Generic
-msgid "Insufficient permissions"
-msgstr "مجوز کافی وجود ندارد"
-
-msgid "Permission denied"
-msgstr "اجازه داده نشد"
-
-msgid "Missing backup key"
-msgstr "کلید پشتیبان موجود نیست"
-
-msgid "No backups found in S3 prefix backups/."
-msgstr "هیچ پشتیبانی در پیشوند backups/ در S3 یافت نشد."
-
-msgid "OK"
-msgstr "تأیید"
-
-# Schedules list strings
-msgid "Every 2 hours"
-msgstr "هر ۲ ساعت"
-
-msgid "Every 4 hours"
-msgstr "هر ۴ ساعت"
-
-msgid "Every 8 hours"
-msgstr "هر ۸ ساعت"
-
-msgid "Every 12 hours"
-msgstr "هر ۱۲ ساعت"
-
-msgid "Every 2 weeks"
-msgstr "هر ۲ هفته"
-
-msgid "Every month"
-msgstr "هر ماه"
-
-# More pages/menus
-msgid "Schedules"
-msgstr "زمان‌بندی‌ها"
-
-msgid "Setup Wizard"
-msgstr "جادوگر راه‌اندازی"
-
-# Extra states and messages
-msgid "Paused"
-msgstr "متوقف"
-
-msgid "Backup cancelled"
-msgstr "پشتیبان‌گیری لغو شد"
-
-msgid "Backup paused"
-msgstr "پشتیبان‌گیری متوقف شد"
-
-msgid "No backups found yet."
-msgstr "هنوز هیچ پشتیبانی یافت نشد."
-# Progress/status strings
-msgid "Queued"
-msgstr "در صف"
-
-msgid "Preparing"
-msgstr "در حال آماده‌سازی"
-
+#: src/BackupManager.php:79 src/BackupManager.php:317
 msgid "Archiving DB"
 msgstr "در حال بایگانی پایگاه‌داده"
 
+#: src/BackupManager.php:85 src/BackupManager.php:91
 msgid "Archiving Files"
 msgstr "در حال بایگانی فایل‌ها"
 
-msgid "Upload Pending"
-msgstr "در انتظار بارگذاری"
+# Backups page
+#: src/Admin/Admin.php:717
+msgid "Backup"
+msgstr "پشتیبان"
 
-msgid "Uploading"
-msgstr "در حال بارگذاری"
+#: src/Admin/Admin.php:439 src/Admin/Admin.php:490
+msgid "Backup Type"
+msgstr "نوع پشتیبان"
 
-msgid "Verifying"
-msgstr "در حال بررسی"
+#: src/BackupManager.php:237
+msgid "Backup cancelled"
+msgstr "پشتیبان‌گیری لغو شد"
 
-msgid "Finalizing"
-msgstr "در حال نهایی‌سازی"
-
-msgid "Complete"
-msgstr "تکمیل شد"
-
-msgid "Downloading"
-msgstr "در حال دریافت"
-
-msgid "Downloaded"
-msgstr "دریافت شد"
-
-msgid "Restoring DB"
-msgstr "در حال بازیابی پایگاه‌داده"
-
-msgid "Restoring Files"
-msgstr "در حال بازیابی فایل‌ها"
-
-
-msgid "Unpacked"
-msgstr "استخراج شد"
-
-# Dashboard strings
-msgid "Last S3 upload:"
-msgstr "آخرین بارگذاری S3:"
-
-msgid "Last backup:"
-msgstr "آخرین پشتیبان:"
-
-
-msgid "not scheduled"
-msgstr "زمان‌بندی نشده"
-
-msgid "never"
-msgstr "هرگز"
-
-msgid "unknown"
-msgstr "نامشخص"
-
-msgid "ago"
-msgstr "پیش"
-
-# S3 test/messages
-msgid "S3 connection success!"
-msgstr "اتصال به S3 موفق بود!"
-
-msgid "S3 connection failed: "
-msgstr "اتصال به S3 ناموفق بود: "
-
-msgid "Backup running and uploading to S3. Check logs for progress."
-msgstr "پشتیبان‌گیری در حال اجرا و بارگذاری در S3 است. برای پیشرفت، لاگ‌ها را بررسی کنید."
-
-msgid "Backup running (no S3 upload). Check logs for progress."
-msgstr "پشتیبان‌گیری در حال اجرا (بدون بارگذاری در S3). برای پیشرفت، لاگ‌ها را بررسی کنید."
-
+#: src/Admin/Admin.php:132
 msgid "Backup failed: "
 msgstr "پشتیبان‌گیری ناموفق بود: "
 
+#: src/BackupManager.php:243
+msgid "Backup paused"
+msgstr "پشتیبان‌گیری متوقف شد"
+
+#: src/Admin/Admin.php:129
+msgid "Backup running (no S3 upload). Check logs for progress."
+msgstr ""
+"پشتیبان‌گیری در حال اجرا (بدون بارگذاری در S3). برای پیشرفت، لاگ‌ها را بررسی "
+"کنید."
+
+#: src/Admin/Admin.php:128
+msgid "Backup running and uploading to S3. Check logs for progress."
+msgstr ""
+"پشتیبان‌گیری در حال اجرا و بارگذاری در S3 است. برای پیشرفت، لاگ‌ها را بررسی "
+"کنید."
+
+#: src/Admin/Admin.php:74 src/Admin/Admin.php:75 src/Admin/Admin.php:521
+msgid "Backups"
+msgstr "نسخه‌های پشتیبان"
+
+#: src/Admin/Admin.php:602
+msgid "Cancel"
+msgstr "لغو"
+
+#: src/Admin/Admin.php:449 src/Admin/Admin.php:502
+msgid "Catch up"
+msgstr "جبران"
+
+#: src/Admin/Admin.php:538
+msgid "Changed since last backup"
+msgstr ""
+
+#: src/Admin/Admin.php:533
+msgid "Choose what to include"
+msgstr ""
+
+#: src/RestoreManager.php:246 src/RestoreManager.php:449
+#: src/BackupManager.php:151
+msgid "Complete"
+msgstr "تکمیل شد"
+
+#: src/S3ClientFactory.php:22
+msgid ""
+"Composer dependencies missing (aws/aws-sdk-php). Please run composer install."
+msgstr ""
+
+#: src/Admin/Admin.php:262
+msgid "Configure your S3 bucket in Settings to see recent backups."
+msgstr "برای دیدن پشتیبان‌های اخیر، در تنظیمات نام سطل S3 را تنظیم کنید."
+
+#: src/Admin/Admin.php:619 src/Admin/Admin.php:801 src/Admin/Admin.php:887
+msgid "Copy"
+msgstr "کپی"
+
+#: src/Admin/Admin.php:535
+msgid "Database + files"
+msgstr ""
+
+#: src/Admin/Admin.php:536
+msgid "Database only"
+msgstr ""
+
+#: src/Admin/Admin.php:613 src/Admin/Admin.php:795
+msgid "Debug"
+msgstr ""
+
+#: virakcloud-backup.php:77
+msgid "Documentation"
+msgstr "مستندات"
+
+#: src/Admin/Admin.php:314 src/Admin/Admin.php:620 src/Admin/Admin.php:803
+msgid "Download"
+msgstr "دانلود"
+
+#: src/RestoreManager.php:78
+msgid "Downloaded"
+msgstr "دریافت شد"
+
+#: src/RestoreManager.php:46 src/RestoreManager.php:60
+#: src/RestoreManager.php:264
+msgid "Downloading"
+msgstr "در حال دریافت"
+
+#: src/Admin/Admin.php:570
+msgid "Drag & drop or click to select a backup file (.zip/.tar/.gz)"
+msgstr ""
+
+#: src/Admin/Admin.php:766
+msgid "Drag & drop or click to select a backup file to restore (.zip/.tar/.gz)"
+msgstr ""
+
+#: src/Admin/Admin.php:771
+msgid "Dry Run"
+msgstr ""
+
+#: src/Admin/Admin.php:734
+msgid "Dry Run (extract and validate only)"
+msgstr "اجرای آزمایشی (فقط استخراج و اعتبارسنجی)"
+
+#: src/RestoreManager.php:191 src/RestoreManager.php:396
+#: src/Admin/Admin.php:848
+msgid "Dry run complete"
+msgstr "اجرای آزمایشی به پایان رسید"
+
+#: src/Admin/Admin.php:245
+msgid "Error"
+msgstr ""
+
+#: src/Admin/Admin.php:614 src/Admin/Admin.php:796
+msgid "Errors"
+msgstr ""
+
+#: src/Scheduler.php:37
+msgid "Every 12 hours"
+msgstr "هر ۱۲ ساعت"
+
+# Schedules list strings
+#: src/Scheduler.php:25
+msgid "Every 2 hours"
+msgstr "هر ۲ ساعت"
+
+#: src/Scheduler.php:41
+msgid "Every 2 weeks"
+msgstr "هر ۲ هفته"
+
+#: src/Scheduler.php:29
+msgid "Every 4 hours"
+msgstr "هر ۴ ساعت"
+
+#: src/Scheduler.php:33
+msgid "Every 8 hours"
+msgstr "هر ۸ ساعت"
+
+#: src/Scheduler.php:45
+msgid "Every month"
+msgstr "هر ماه"
+
+#: src/RestoreManager.php:173 src/RestoreManager.php:386
+#, fuzzy
+msgid "Extraction failed"
+msgstr "اتصال به S3 ناموفق بود: "
+
+#: src/Admin/Admin.php:301
+msgid "File"
+msgstr ""
+
+#: src/RestoreManager.php:240 src/RestoreManager.php:442
+#: src/BackupManager.php:151
+msgid "Finalizing"
+msgstr "در حال نهایی‌سازی"
+
+#: src/Admin/Admin.php:369
+msgid "Free disk space"
+msgstr "فضای خالی دیسک"
+
+#: src/Admin/Admin.php:746
+msgid "From"
+msgstr "از"
+
+#: src/Admin/Admin.php:844 src/Admin/Admin.php:1018
+msgid "Full restore complete"
+msgstr "بازیابی کامل به پایان رسید"
+
+#: src/Admin/Admin.php:772
+#, fuzzy
+msgid "Full site restore"
+msgstr "بازیابی کامل به پایان رسید"
+
+#: src/Admin/Admin.php:739
+msgid "Full site restore (replace WordPress core and wp-config.php)"
+msgstr "بازیابی کامل سایت (جایگزینی هسته وردپرس و wp-config.php)"
+
+#: src/Admin/Admin.php:612 src/Admin/Admin.php:794
+msgid "Info"
+msgstr ""
+
+# Generic
+#: src/Admin/Admin.php:107 src/Admin/Admin.php:120 src/Admin/Admin.php:142
+msgid "Insufficient permissions"
+msgstr "مجوز کافی وجود ندارد"
+
+#: src/Admin/Admin.php:431 src/Admin/Admin.php:477
+msgid "Interval"
+msgstr "بازه"
+
+#: src/Admin/Admin.php:229
+#, fuzzy
+msgid "Last Backup"
+msgstr "آخرین پشتیبان"
+
+#: src/Admin/Admin.php:580
+msgid "Last Test Result"
+msgstr "نتیجه آخرین آزمون"
+
+#: src/Admin/Admin.php:353
+msgid "Last backup"
+msgstr "آخرین پشتیبان"
+
+#: src/Admin/Admin.php:582
+msgid "Latency %d ms, size %d bytes, checksum %s"
+msgstr "تأخیر %d میلی‌ثانیه، اندازه %d بایت، چک‌سام %s"
+
+#: src/Admin/Admin.php:607
+msgid "Live Logs"
+msgstr "لاگ‌های لحظه‌ای"
+
+# Logs page
+#: src/Admin/Admin.php:90 src/Admin/Admin.php:91 src/Admin/Admin.php:871
+msgid "Logs"
+msgstr "لاگ‌ها"
+
+#: src/Admin/Admin.php:362 src/Admin/Admin.php:366 src/Admin/Admin.php:370
+msgid "Low"
+msgstr ""
+
+#: src/Admin/Admin.php:365
+msgid "Max execution time"
+msgstr "حداکثر زمان اجرا"
+
+#: src/Admin/Admin.php:354
+msgid "Missing"
+msgstr ""
+
+#: src/Admin/Admin.php:831
+msgid "Missing backup key"
+msgstr "کلید پشتیبان موجود نیست"
+
+#: src/Admin/Admin.php:946 src/Admin/Admin.php:997
+#, fuzzy
+msgid "Missing file"
+msgstr "کلید پشتیبان موجود نیست"
+
+#: src/Admin/Admin.php:924
+#, fuzzy
+msgid "Missing key"
+msgstr "کلید پشتیبان موجود نیست"
+
+#: src/Admin/Admin.php:532
+msgid "Mode"
+msgstr "حالت"
+
+#: src/Admin/Admin.php:235
+#, fuzzy
+msgid "Next Scheduled Backup"
+msgstr "زمان‌بندی بعدی پشتیبان:"
+
+#: src/Admin/Admin.php:357
+msgid "Next run"
+msgstr "اجرای بعدی"
+
+#: src/Admin/Admin.php:453 src/Admin/Admin.php:510
+msgid "Next run (preview)"
+msgstr "اجرای بعدی (پیش‌نمایش)"
+
+#: src/Admin/Admin.php:712
+#, fuzzy
+msgid "No backups found for this site."
+msgstr "هنوز هیچ پشتیبانی یافت نشد."
+
+#: src/Admin/Admin.php:299
+msgid "No backups found yet."
+msgstr "هنوز هیچ پشتیبانی یافت نشد."
+
+#: src/Admin/Admin.php:907
+msgid "No log file found"
+msgstr "هیچ پرونده لاگی یافت نشد"
+
+#: src/Admin/Admin.php:239
+msgid "Not configured"
+msgstr ""
+
+#: src/Admin/Admin.php:358
+#, fuzzy
+msgid "Not scheduled"
+msgstr "زمان‌بندی نشده"
+
+#: src/Admin/Admin.php:255
+msgid "Open Backups"
+msgstr "باز کردن صفحه پشتیبان‌ها"
+
+#: src/Admin/Admin.php:361
+msgid "PHP memory_limit"
+msgstr "محدودیت حافظه PHP"
+
+#: src/Admin/Admin.php:416
+msgid "Path Style"
+msgstr "حالت مسیر (Path Style)"
+
+#: src/Admin/Admin.php:600
+msgid "Pause"
+msgstr "مکث"
+
+# Extra states and messages
+#: src/BackupManager.php:241
+msgid "Paused"
+msgstr "متوقف"
+
+#: src/RestoreManager.php:24 src/RestoreManager.php:95
+#: src/RestoreManager.php:306
+msgid "Permission denied"
+msgstr "اجازه داده نشد"
+
+#: src/RestoreManager.php:110 src/RestoreManager.php:318
+#: src/BackupManager.php:72
+msgid "Preparing"
+msgstr "در حال آماده‌سازی"
+
+#: src/Admin/Admin.php:591 src/Admin/Admin.php:783
+msgid "Progress"
+msgstr "پیشرفت"
+
+# Progress/status strings
+#: src/BackupManager.php:58
+msgid "Queued"
+msgstr "در صف"
+
+#: src/Admin/Admin.php:259
+msgid "Recent Backups"
+msgstr "پشتیبان‌های اخیر"
+
+#: src/Admin/Admin.php:82 src/Admin/Admin.php:83 src/Admin/Admin.php:313
+msgid "Restore"
+msgstr "بازیابی"
+
+#: src/Admin/Admin.php:1021
+#, fuzzy
+msgid "Restore complete."
+msgstr "بازیابی کامل به پایان رسید"
+
+#: src/Admin/Admin.php:849
+msgid ""
+"Restore complete. Please review S3 Settings and ensure your access/secret "
+"keys are configured to resume backups."
+msgstr ""
+"بازیابی کامل شد. لطفاً تنظیمات S3 را بررسی کنید و مطمئن شوید کلیدهای دسترسی/"
+"مخفی پیکربندی شده‌اند تا پشتیبان‌گیری‌ها از سر گرفته شوند."
+
+#: src/RestoreManager.php:201 src/RestoreManager.php:404
+msgid "Restoring DB"
+msgstr "در حال بازیابی پایگاه‌داده"
+
+#: src/RestoreManager.php:208 src/RestoreManager.php:422
+#: src/RestoreManager.php:656
+msgid "Restoring Files"
+msgstr "در حال بازیابی فایل‌ها"
+
+#: src/Admin/Admin.php:601
+msgid "Resume"
+msgstr "ادامه"
+
+#: src/Admin/Admin.php:744
+msgid "Rewrite URLs"
+msgstr "بازنویسی آدرس‌ها"
+
+#: src/RestoreManager.php:229 src/RestoreManager.php:431
+msgid "Rewriting URLs"
+msgstr "بازنویسی آدرس‌ها"
+
+#: src/Admin/Admin.php:549
+msgid "Run Backup"
+msgstr "اجرای پشتیبان‌گیری"
+
+#: src/Admin/Admin.php:561
+msgid "Run Test Backup"
+msgstr "اجرای آزمون پشتیبان"
+
+#: src/Admin/Admin.php:451 src/Admin/Admin.php:507
+msgid "Run missed backups"
+msgstr "اجرای پشتیبان‌های از دست‌رفته"
+
+#: src/Admin/Admin.php:249
+msgid "S3 Upload Status"
+msgstr ""
+
+# Restore page guidance
+#: src/Admin/Admin.php:660
+msgid ""
+"S3 access/secret keys are not configured. Please set them in Settings before "
+"restoring."
+msgstr ""
+"کلیدهای دسترسی/مخفی S3 پیکربندی نشده‌اند. لطفاً پیش از بازیابی، آن‌ها را در "
+"تنظیمات وارد کنید."
+
+#: src/RestoreManager.php:38 src/Admin/Admin.php:652
+msgid "S3 bucket is not configured. Please set it in Settings."
+msgstr "سطل S3 پیکربندی نشده است. لطفاً در تنظیمات آن را مشخص کنید."
+
+#: src/Admin/Admin.php:152
+msgid "S3 connection failed: "
+msgstr "اتصال به S3 ناموفق بود: "
+
+# S3 test/messages
+#: src/Admin/Admin.php:148
+msgid "S3 connection success!"
+msgstr "اتصال به S3 موفق بود!"
+
+#: src/Admin/Admin.php:512
+#, fuzzy
+msgid "Save Schedule"
+msgstr "زمان‌بندی"
+
+#: src/Admin/Admin.php:456
+msgid "Save Settings"
+msgstr "ذخیره تنظیمات"
+
+#: src/Admin/Admin.php:429
+msgid "Schedule"
+msgstr "زمان‌بندی"
+
+# More pages/menus
+#: src/Admin/Admin.php:66 src/Admin/Admin.php:67 src/Admin/Admin.php:472
+msgid "Schedules"
+msgstr "زمان‌بندی‌ها"
+
+#: src/Admin/Admin.php:721
+msgid "Search backups…"
+msgstr ""
+
+#: src/Admin/Admin.php:58 src/Admin/Admin.php:59 src/Admin/Admin.php:382
+msgid "Settings"
+msgstr "تنظیمات"
+
+#: src/Admin/Admin.php:301
+msgid "Size"
+msgstr ""
+
+#: src/Admin/Admin.php:617 src/Admin/Admin.php:799 src/Admin/Admin.php:886
+msgid "Start Auto-Refresh"
+msgstr "شروع به‌روزرسانی خودکار"
+
+#: src/Admin/Admin.php:756
+msgid "Start Restore"
+msgstr "شروع بازیابی"
+
+#: src/Admin/Admin.php:445 src/Admin/Admin.php:495
+msgid "Start Time"
+msgstr "زمان شروع"
+
+#: src/Admin/Admin.php:327
+msgid "Status"
+msgstr "وضعیت"
+
+#: src/Admin/Admin.php:618 src/Admin/Admin.php:800
+msgid "Stop Auto-Scroll"
+msgstr "توقف پیمایش خودکار"
+
+#: src/Admin/Admin.php:462
+msgid "Test S3 Connection"
+msgstr "آزمون اتصال S3"
+
+#: src/Admin/Admin.php:210
 msgid "Test backup failed: "
 msgstr "پشتیبان آزمایشی ناموفق بود: "
 
+#: src/Admin/Admin.php:204
 msgid "Test backup uploaded in %1$d ms (%.1f KiB/s)."
 msgstr "پشتیبان آزمایشی در %1$d میلی‌ثانیه بارگذاری شد (%.1f کیبی‌بایت/ثانیه)."
 
-# Restore page guidance
-msgid "S3 access/secret keys are not configured. Please set them in Settings before restoring."
-msgstr "کلیدهای دسترسی/مخفی S3 پیکربندی نشده‌اند. لطفاً پیش از بازیابی، آن‌ها را در تنظیمات وارد کنید."
+#: src/Admin/Admin.php:514
+msgid ""
+"Tip: Configure a real cron to call wp-cron.php every 5 minutes for "
+"reliability."
+msgstr ""
 
-msgid "Restore complete. Please review S3 Settings and ensure your access/secret keys are configured to resume backups."
-msgstr "بازیابی کامل شد. لطفاً تنظیمات S3 را بررسی کنید و مطمئن شوید کلیدهای دسترسی/مخفی پیکربندی شده‌اند تا پشتیبان‌گیری‌ها از سر گرفته شوند."
+#: src/Admin/Admin.php:750
+msgid "To"
+msgstr "به"
 
-msgid "Full restore complete"
-msgstr "بازیابی کامل به پایان رسید"
+#: src/Admin/Admin.php:624 src/Admin/Admin.php:807 src/Admin/Admin.php:892
+#, fuzzy
+msgid "Toggle Logs"
+msgstr "لاگ‌های لحظه‌ای"
+
+#: src/Admin/Admin.php:552
+msgid "Types:"
+msgstr "انواع:"
+
+#: src/RestoreManager.php:187 src/RestoreManager.php:392
+msgid "Unpacked"
+msgstr "استخراج شد"
+
+#: src/Admin/Admin.php:574
+#, fuzzy
+msgid "Upload"
+msgstr "در حال بارگذاری"
+
+#: src/BackupManager.php:103
+msgid "Upload Pending"
+msgstr "در انتظار بارگذاری"
+
+#: src/Admin/Admin.php:773
+msgid "Upload and Restore"
+msgstr ""
+
+#: src/Admin/Admin.php:765
+#, fuzzy
+msgid "Upload backup"
+msgstr "پس از پشتیبان‌گیری در S3 بارگذاری شود"
+
+#: src/Admin/Admin.php:569
+msgid "Upload backup to S3"
+msgstr ""
+
+#: src/Admin/Admin.php:951 src/Admin/Admin.php:1002
+#, fuzzy
+msgid "Upload failed"
+msgstr "در انتظار بارگذاری"
+
+#: src/Admin/Admin.php:547
+msgid "Upload to S3 after backup"
+msgstr "پس از پشتیبان‌گیری در S3 بارگذاری شود"
+
+#: src/Admin/Admin.php:982
+#, fuzzy
+msgid "Uploaded"
+msgstr "در انتظار بارگذاری"
+
+#: src/BackupManager.php:129 src/Admin/Admin.php:595 src/Admin/Admin.php:787
+msgid "Uploading"
+msgstr "در حال بارگذاری"
+
+#: src/Admin/Admin.php:421
+msgid "Use path-style addressing"
+msgstr "استفاده از آدرس‌دهی به‌صورت مسیر"
+
+#: src/BackupManager.php:147
+msgid "Verifying"
+msgstr "در حال بررسی"
+
+#: src/RestoreManager.php:71 src/RestoreManager.php:287
+#, fuzzy
+msgid "Verifying download"
+msgstr "در حال بررسی"
+
+#: src/Admin/Admin.php:48 src/Admin/Admin.php:49 src/Admin/Admin.php:219
+msgid "VirakCloud Backup"
+msgstr "پشتیبان‌گیر VirakCloud"
+
+#: virakcloud-backup.php:46
+msgid ""
+"VirakCloud Backup requires Composer dependencies. Please run composer "
+"install inside the plugin folder."
+msgstr ""
+
+# Settings page labels
+#: src/Admin/Admin.php:392
+msgid "VirakCloud S3"
+msgstr "VirakCloud S3"
+
+#: src/Admin/Admin.php:372
+msgid "VirakCloud S3 connectivity"
+msgstr "اتصال VirakCloud S3"
+
+#: virakcloud-backup.php:74
+msgid "Website"
+msgstr "وب‌سایت"
+
+#: src/Admin/Admin.php:333
+msgid "ago"
+msgstr "پیش"
+
+#: src/Admin/Admin.php:554
+msgid "db = only the database export (.sql). "
+msgstr "بانک‌اطلاعاتی = فقط خروجی پایگاه‌داده (.sql). "
+
+#: src/Admin/Admin.php:555
+msgid "files = only wp-content (themes, plugins, uploads). "
+msgstr "فایل‌ها = فقط wp-content (قالب‌ها، افزونه‌ها، آپلودها). "
+
+#: src/Admin/Admin.php:553
+msgid "full = database + all WordPress files (core, wp-content). "
+msgstr "کامل = پایگاه‌داده + همه فایل‌های وردپرس (هسته و wp-content). "
+
+#: src/Admin/Admin.php:556
+msgid "incremental = database + files changed since the last backup."
+msgstr "افزایشی = پایگاه‌داده + فایل‌های تغییر کرده از زمان آخرین پشتیبان."
+
+#: src/Admin/Admin.php:334
+msgid "never"
+msgstr "هرگز"
+
+#: src/Admin/Admin.php:224 src/Admin/Admin.php:336
+msgid "not scheduled"
+msgstr "زمان‌بندی نشده"
+
+#: src/Admin/Admin.php:340
+msgid "unknown"
+msgstr "نامشخص"
+
+#: src/Admin/Admin.php:537
+msgid "wp-content only"
+msgstr ""
+
+#~ msgid "Connect Storage"
+#~ msgstr "اتصال ذخیره‌سازی"
+
+#~ msgid "Continue"
+#~ msgstr "ادامه"
+
+#~ msgid "Finish Setup"
+#~ msgstr "پایان راه‌اندازی"
+
+#~ msgid "Run Connection Test"
+#~ msgstr "اجرای آزمون اتصال"
+
+#~ msgid ""
+#~ "Setup is complete. You can run your first backup from the Backups tab."
+#~ msgstr ""
+#~ "راه‌اندازی کامل شد. می‌توانید اولین پشتیبان را از برگه «پشتیبان‌ها» اجرا "
+#~ "کنید."
+
+#~ msgid "Step 1: S3 Settings"
+#~ msgstr "گام ۱: تنظیمات S3"
+
+#~ msgid "Step 2: Test Connection"
+#~ msgstr "گام ۲: آزمون اتصال"
+
+#~ msgid "Step 3: Schedule Backups"
+#~ msgstr "گام ۳: زمان‌بندی پشتیبان‌ها"
+
+#~ msgid "Test Connection"
+#~ msgstr "آزمون اتصال"
+
+#~ msgid "Use path-style addressing (recommended)"
+#~ msgstr "استفاده از آدرس‌دهی به‌صورت مسیر (توصیه‌شده)"
+
+#~ msgid "VirakCloud Backup • Setup Wizard"
+#~ msgstr "جادوگر راه‌اندازی • VirakCloud Backup"
+
+#~ msgid "We will try to access your bucket using the settings from Step 1."
+#~ msgstr "با تنظیمات گام ۱ تلاش می‌کنیم به سطل شما دسترسی پیدا کنیم."
+
+#~ msgid "Stop Auto-Refresh"
+#~ msgstr "توقف به‌روزرسانی خودکار"
+
+#~ msgid "Endpoint"
+#~ msgstr "آدرس پایانی (Endpoint)"
+
+#~ msgid "Region"
+#~ msgstr "ناحیه"
+
+#~ msgid "Bucket"
+#~ msgstr "سطل"
+
+#~ msgid "Access Key"
+#~ msgstr "کلید دسترسی"
+
+#~ msgid "Secret Key"
+#~ msgstr "کلید مخفی"
+
+#~ msgid "Level"
+#~ msgstr "سطح"
+
+#~ msgid "Filter"
+#~ msgstr "فیلتر"
+
+#~ msgid "No backups found in S3 prefix backups/."
+#~ msgstr "هیچ پشتیبانی در پیشوند backups/ در S3 یافت نشد."
+
+#~ msgid "OK"
+#~ msgstr "تأیید"
+
+#~ msgid "Setup Wizard"
+#~ msgstr "جادوگر راه‌اندازی"
+
+# Dashboard strings
+#~ msgid "Last S3 upload:"
+#~ msgstr "آخرین بارگذاری S3:"
+
+#~ msgid "Last backup:"
+#~ msgstr "آخرین پشتیبان:"

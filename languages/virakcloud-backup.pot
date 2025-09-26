@@ -4,5 +4,649 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Codex CLI\n"
+"X-Generator: make_pot.py\n"
 
+#: src/Admin/Admin.php:301
+msgid "Actions"
+msgstr ""
+
+#: src/Admin/Admin.php:611
+#: src/Admin/Admin.php:793
+msgid "All"
+msgstr ""
+
+#: src/Admin/Admin.php:594
+#: src/Admin/Admin.php:786
+msgid "Archiving"
+msgstr ""
+
+#: src/BackupManager.php:79
+#: src/BackupManager.php:317
+msgid "Archiving DB"
+msgstr ""
+
+#: src/BackupManager.php:85
+#: src/BackupManager.php:91
+msgid "Archiving Files"
+msgstr ""
+
+#: src/Admin/Admin.php:717
+msgid "Backup"
+msgstr ""
+
+#: src/Admin/Admin.php:439
+#: src/Admin/Admin.php:490
+msgid "Backup Type"
+msgstr ""
+
+#: src/BackupManager.php:237
+msgid "Backup cancelled"
+msgstr ""
+
+#: src/Admin/Admin.php:132
+msgid "Backup failed: "
+msgstr ""
+
+#: src/BackupManager.php:243
+msgid "Backup paused"
+msgstr ""
+
+#: src/Admin/Admin.php:129
+msgid "Backup running (no S3 upload). Check logs for progress."
+msgstr ""
+
+#: src/Admin/Admin.php:128
+msgid "Backup running and uploading to S3. Check logs for progress."
+msgstr ""
+
+#: src/Admin/Admin.php:74
+#: src/Admin/Admin.php:75
+#: src/Admin/Admin.php:521
+msgid "Backups"
+msgstr ""
+
+#: src/Admin/Admin.php:602
+msgid "Cancel"
+msgstr ""
+
+#: src/Admin/Admin.php:449
+#: src/Admin/Admin.php:502
+msgid "Catch up"
+msgstr ""
+
+#: src/Admin/Admin.php:538
+msgid "Changed since last backup"
+msgstr ""
+
+#: src/Admin/Admin.php:533
+msgid "Choose what to include"
+msgstr ""
+
+#: src/RestoreManager.php:246
+#: src/RestoreManager.php:449
+#: src/BackupManager.php:151
+msgid "Complete"
+msgstr ""
+
+#: src/S3ClientFactory.php:22
+msgid "Composer dependencies missing (aws/aws-sdk-php). Please run composer install."
+msgstr ""
+
+#: src/Admin/Admin.php:262
+msgid "Configure your S3 bucket in Settings to see recent backups."
+msgstr ""
+
+#: src/Admin/Admin.php:619
+#: src/Admin/Admin.php:801
+#: src/Admin/Admin.php:887
+msgid "Copy"
+msgstr ""
+
+#: src/Admin/Admin.php:535
+msgid "Database + files"
+msgstr ""
+
+#: src/Admin/Admin.php:536
+msgid "Database only"
+msgstr ""
+
+#: src/Admin/Admin.php:613
+#: src/Admin/Admin.php:795
+msgid "Debug"
+msgstr ""
+
+#: virakcloud-backup.php:77
+msgid "Documentation"
+msgstr ""
+
+#: src/Admin/Admin.php:314
+#: src/Admin/Admin.php:620
+#: src/Admin/Admin.php:803
+msgid "Download"
+msgstr ""
+
+#: src/RestoreManager.php:78
+msgid "Downloaded"
+msgstr ""
+
+#: src/RestoreManager.php:46
+#: src/RestoreManager.php:60
+#: src/RestoreManager.php:264
+msgid "Downloading"
+msgstr ""
+
+#: src/Admin/Admin.php:570
+msgid "Drag & drop or click to select a backup file (.zip/.tar/.gz)"
+msgstr ""
+
+#: src/Admin/Admin.php:766
+msgid "Drag & drop or click to select a backup file to restore (.zip/.tar/.gz)"
+msgstr ""
+
+#: src/Admin/Admin.php:771
+msgid "Dry Run"
+msgstr ""
+
+#: src/Admin/Admin.php:734
+msgid "Dry Run (extract and validate only)"
+msgstr ""
+
+#: src/RestoreManager.php:191
+#: src/RestoreManager.php:396
+#: src/Admin/Admin.php:848
+msgid "Dry run complete"
+msgstr ""
+
+#: src/Admin/Admin.php:245
+msgid "Error"
+msgstr ""
+
+#: src/Admin/Admin.php:614
+#: src/Admin/Admin.php:796
+msgid "Errors"
+msgstr ""
+
+#: src/Scheduler.php:37
+msgid "Every 12 hours"
+msgstr ""
+
+#: src/Scheduler.php:25
+msgid "Every 2 hours"
+msgstr ""
+
+#: src/Scheduler.php:41
+msgid "Every 2 weeks"
+msgstr ""
+
+#: src/Scheduler.php:29
+msgid "Every 4 hours"
+msgstr ""
+
+#: src/Scheduler.php:33
+msgid "Every 8 hours"
+msgstr ""
+
+#: src/Scheduler.php:45
+msgid "Every month"
+msgstr ""
+
+#: src/RestoreManager.php:173
+#: src/RestoreManager.php:386
+msgid "Extraction failed"
+msgstr ""
+
+#: src/Admin/Admin.php:301
+msgid "File"
+msgstr ""
+
+#: src/RestoreManager.php:240
+#: src/RestoreManager.php:442
+#: src/BackupManager.php:151
+msgid "Finalizing"
+msgstr ""
+
+#: src/Admin/Admin.php:369
+msgid "Free disk space"
+msgstr ""
+
+#: src/Admin/Admin.php:746
+msgid "From"
+msgstr ""
+
+#: src/Admin/Admin.php:844
+#: src/Admin/Admin.php:1018
+msgid "Full restore complete"
+msgstr ""
+
+#: src/Admin/Admin.php:772
+msgid "Full site restore"
+msgstr ""
+
+#: src/Admin/Admin.php:739
+msgid "Full site restore (replace WordPress core and wp-config.php)"
+msgstr ""
+
+#: src/Admin/Admin.php:612
+#: src/Admin/Admin.php:794
+msgid "Info"
+msgstr ""
+
+#: src/Admin/Admin.php:107
+#: src/Admin/Admin.php:120
+#: src/Admin/Admin.php:142
+msgid "Insufficient permissions"
+msgstr ""
+
+#: src/Admin/Admin.php:431
+#: src/Admin/Admin.php:477
+msgid "Interval"
+msgstr ""
+
+#: src/Admin/Admin.php:229
+msgid "Last Backup"
+msgstr ""
+
+#: src/Admin/Admin.php:580
+msgid "Last Test Result"
+msgstr ""
+
+#: src/Admin/Admin.php:353
+msgid "Last backup"
+msgstr ""
+
+#: src/Admin/Admin.php:582
+msgid "Latency %d ms, size %d bytes, checksum %s"
+msgstr ""
+
+#: src/Admin/Admin.php:607
+msgid "Live Logs"
+msgstr ""
+
+#: src/Admin/Admin.php:90
+#: src/Admin/Admin.php:91
+#: src/Admin/Admin.php:871
+msgid "Logs"
+msgstr ""
+
+#: src/Admin/Admin.php:362
+#: src/Admin/Admin.php:366
+#: src/Admin/Admin.php:370
+msgid "Low"
+msgstr ""
+
+#: src/Admin/Admin.php:365
+msgid "Max execution time"
+msgstr ""
+
+#: src/Admin/Admin.php:354
+msgid "Missing"
+msgstr ""
+
+#: src/Admin/Admin.php:831
+msgid "Missing backup key"
+msgstr ""
+
+#: src/Admin/Admin.php:946
+#: src/Admin/Admin.php:997
+msgid "Missing file"
+msgstr ""
+
+#: src/Admin/Admin.php:924
+msgid "Missing key"
+msgstr ""
+
+#: src/Admin/Admin.php:532
+msgid "Mode"
+msgstr ""
+
+#: src/Admin/Admin.php:235
+msgid "Next Scheduled Backup"
+msgstr ""
+
+#: src/Admin/Admin.php:357
+msgid "Next run"
+msgstr ""
+
+#: src/Admin/Admin.php:453
+#: src/Admin/Admin.php:510
+msgid "Next run (preview)"
+msgstr ""
+
+#: src/Admin/Admin.php:712
+msgid "No backups found for this site."
+msgstr ""
+
+#: src/Admin/Admin.php:299
+msgid "No backups found yet."
+msgstr ""
+
+#: src/Admin/Admin.php:907
+msgid "No log file found"
+msgstr ""
+
+#: src/Admin/Admin.php:239
+msgid "Not configured"
+msgstr ""
+
+#: src/Admin/Admin.php:358
+msgid "Not scheduled"
+msgstr ""
+
+#: src/Admin/Admin.php:255
+msgid "Open Backups"
+msgstr ""
+
+#: src/Admin/Admin.php:361
+msgid "PHP memory_limit"
+msgstr ""
+
+#: src/Admin/Admin.php:416
+msgid "Path Style"
+msgstr ""
+
+#: src/Admin/Admin.php:600
+msgid "Pause"
+msgstr ""
+
+#: src/BackupManager.php:241
+msgid "Paused"
+msgstr ""
+
+#: src/RestoreManager.php:24
+#: src/RestoreManager.php:95
+#: src/RestoreManager.php:306
+msgid "Permission denied"
+msgstr ""
+
+#: src/RestoreManager.php:110
+#: src/RestoreManager.php:318
+#: src/BackupManager.php:72
+msgid "Preparing"
+msgstr ""
+
+#: src/Admin/Admin.php:591
+#: src/Admin/Admin.php:783
+msgid "Progress"
+msgstr ""
+
+#: src/BackupManager.php:58
+msgid "Queued"
+msgstr ""
+
+#: src/Admin/Admin.php:259
+msgid "Recent Backups"
+msgstr ""
+
+#: src/Admin/Admin.php:82
+#: src/Admin/Admin.php:83
+#: src/Admin/Admin.php:313
+msgid "Restore"
+msgstr ""
+
+#: src/Admin/Admin.php:1021
+msgid "Restore complete."
+msgstr ""
+
+#: src/Admin/Admin.php:849
+msgid "Restore complete. Please review S3 Settings and ensure your access/secret keys are configured to resume backups."
+msgstr ""
+
+#: src/RestoreManager.php:201
+#: src/RestoreManager.php:404
+msgid "Restoring DB"
+msgstr ""
+
+#: src/RestoreManager.php:208
+#: src/RestoreManager.php:422
+#: src/RestoreManager.php:656
+msgid "Restoring Files"
+msgstr ""
+
+#: src/Admin/Admin.php:601
+msgid "Resume"
+msgstr ""
+
+#: src/Admin/Admin.php:744
+msgid "Rewrite URLs"
+msgstr ""
+
+#: src/RestoreManager.php:229
+#: src/RestoreManager.php:431
+msgid "Rewriting URLs"
+msgstr ""
+
+#: src/Admin/Admin.php:549
+msgid "Run Backup"
+msgstr ""
+
+#: src/Admin/Admin.php:561
+msgid "Run Test Backup"
+msgstr ""
+
+#: src/Admin/Admin.php:451
+#: src/Admin/Admin.php:507
+msgid "Run missed backups"
+msgstr ""
+
+#: src/Admin/Admin.php:249
+msgid "S3 Upload Status"
+msgstr ""
+
+#: src/Admin/Admin.php:660
+msgid "S3 access/secret keys are not configured. Please set them in Settings before restoring."
+msgstr ""
+
+#: src/RestoreManager.php:38
+#: src/Admin/Admin.php:652
+msgid "S3 bucket is not configured. Please set it in Settings."
+msgstr ""
+
+#: src/Admin/Admin.php:152
+msgid "S3 connection failed: "
+msgstr ""
+
+#: src/Admin/Admin.php:148
+msgid "S3 connection success!"
+msgstr ""
+
+#: src/Admin/Admin.php:512
+msgid "Save Schedule"
+msgstr ""
+
+#: src/Admin/Admin.php:456
+msgid "Save Settings"
+msgstr ""
+
+#: src/Admin/Admin.php:429
+msgid "Schedule"
+msgstr ""
+
+#: src/Admin/Admin.php:66
+#: src/Admin/Admin.php:67
+#: src/Admin/Admin.php:472
+msgid "Schedules"
+msgstr ""
+
+#: src/Admin/Admin.php:721
+msgid "Search backups…"
+msgstr ""
+
+#: src/Admin/Admin.php:58
+#: src/Admin/Admin.php:59
+#: src/Admin/Admin.php:382
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/Admin.php:301
+msgid "Size"
+msgstr ""
+
+#: src/Admin/Admin.php:617
+#: src/Admin/Admin.php:799
+#: src/Admin/Admin.php:886
+msgid "Start Auto-Refresh"
+msgstr ""
+
+#: src/Admin/Admin.php:756
+msgid "Start Restore"
+msgstr ""
+
+#: src/Admin/Admin.php:445
+#: src/Admin/Admin.php:495
+msgid "Start Time"
+msgstr ""
+
+#: src/Admin/Admin.php:327
+msgid "Status"
+msgstr ""
+
+#: src/Admin/Admin.php:618
+#: src/Admin/Admin.php:800
+msgid "Stop Auto-Scroll"
+msgstr ""
+
+#: src/Admin/Admin.php:462
+msgid "Test S3 Connection"
+msgstr ""
+
+#: src/Admin/Admin.php:210
+msgid "Test backup failed: "
+msgstr ""
+
+#: src/Admin/Admin.php:204
+msgid "Test backup uploaded in %1$d ms (%.1f KiB/s)."
+msgstr ""
+
+#: src/Admin/Admin.php:514
+msgid "Tip: Configure a real cron to call wp-cron.php every 5 minutes for reliability."
+msgstr ""
+
+#: src/Admin/Admin.php:750
+msgid "To"
+msgstr ""
+
+#: src/Admin/Admin.php:624
+#: src/Admin/Admin.php:807
+#: src/Admin/Admin.php:892
+msgid "Toggle Logs"
+msgstr ""
+
+#: src/Admin/Admin.php:552
+msgid "Types:"
+msgstr ""
+
+#: src/RestoreManager.php:187
+#: src/RestoreManager.php:392
+msgid "Unpacked"
+msgstr ""
+
+#: src/Admin/Admin.php:574
+msgid "Upload"
+msgstr ""
+
+#: src/BackupManager.php:103
+msgid "Upload Pending"
+msgstr ""
+
+#: src/Admin/Admin.php:773
+msgid "Upload and Restore"
+msgstr ""
+
+#: src/Admin/Admin.php:765
+msgid "Upload backup"
+msgstr ""
+
+#: src/Admin/Admin.php:569
+msgid "Upload backup to S3"
+msgstr ""
+
+#: src/Admin/Admin.php:951
+#: src/Admin/Admin.php:1002
+msgid "Upload failed"
+msgstr ""
+
+#: src/Admin/Admin.php:547
+msgid "Upload to S3 after backup"
+msgstr ""
+
+#: src/Admin/Admin.php:982
+msgid "Uploaded"
+msgstr ""
+
+#: src/BackupManager.php:129
+#: src/Admin/Admin.php:595
+#: src/Admin/Admin.php:787
+msgid "Uploading"
+msgstr ""
+
+#: src/Admin/Admin.php:421
+msgid "Use path-style addressing"
+msgstr ""
+
+#: src/BackupManager.php:147
+msgid "Verifying"
+msgstr ""
+
+#: src/RestoreManager.php:71
+#: src/RestoreManager.php:287
+msgid "Verifying download"
+msgstr ""
+
+#: src/Admin/Admin.php:48
+#: src/Admin/Admin.php:49
+#: src/Admin/Admin.php:219
+msgid "VirakCloud Backup"
+msgstr ""
+
+#: virakcloud-backup.php:46
+msgid "VirakCloud Backup requires Composer dependencies. Please run composer install inside the plugin folder."
+msgstr ""
+
+#: src/Admin/Admin.php:392
+msgid "VirakCloud S3"
+msgstr ""
+
+#: src/Admin/Admin.php:372
+msgid "VirakCloud S3 connectivity"
+msgstr ""
+
+#: virakcloud-backup.php:74
+msgid "Website"
+msgstr ""
+
+#: src/Admin/Admin.php:333
+msgid "ago"
+msgstr ""
+
+#: src/Admin/Admin.php:554
+msgid "db = only the database export (.sql). "
+msgstr ""
+
+#: src/Admin/Admin.php:555
+msgid "files = only wp-content (themes, plugins, uploads). "
+msgstr ""
+
+#: src/Admin/Admin.php:553
+msgid "full = database + all WordPress files (core, wp-content). "
+msgstr ""
+
+#: src/Admin/Admin.php:556
+msgid "incremental = database + files changed since the last backup."
+msgstr ""
+
+#: src/Admin/Admin.php:334
+msgid "never"
+msgstr ""
+
+#: src/Admin/Admin.php:224
+#: src/Admin/Admin.php:336
+msgid "not scheduled"
+msgstr ""
+
+#: src/Admin/Admin.php:340
+msgid "unknown"
+msgstr ""
+
+#: src/Admin/Admin.php:537
+msgid "wp-content only"
+msgstr ""
