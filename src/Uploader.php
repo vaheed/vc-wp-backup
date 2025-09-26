@@ -92,12 +92,8 @@ class Uploader
             if (!$fp) {
                 throw new \RuntimeException('Cannot open file for upload');
             }
-            if (fseek($fp, $offset) !== 0) {
-                fclose($fp);
-                throw new \RuntimeException('Seek failed during multipart upload');
-            }
-            // Limit read window to this part size
-            $body = new LimitStream(Utils::streamFor($fp), $length, 0);
+            // Wrap the file handle and limit to this part window starting at the absolute file offset
+            $body = new LimitStream(Utils::streamFor($fp), $length, $offset);
             $result = $this->client->uploadPart([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
