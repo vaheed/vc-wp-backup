@@ -6,7 +6,7 @@ class ArchiveBuilder
 {
     private Logger $logger;
     private int $progressCurrent = 40;
-    private int $progressMax = 69;
+    // Upper bound for archiving stage is implicit (69%); no separate property needed.
     private int $processed = 0;
     private int $totalBytes = 0;
     private int $processedBytes = 0;
@@ -34,7 +34,7 @@ class ArchiveBuilder
         $this->logger->debug('archive_build_start', ['format' => $format, 'output' => $output]);
         $format = $format === 'tar.gz' ? 'tar.gz' : 'zip';
         $this->progressCurrent = 40;
-        $this->progressMax = 69; // keep 70 for next stage
+        // Keep 70% for next stage; archiving reports 40-69%
         $this->processed = 0;
         $this->processedBytes = 0;
         $this->processedFiles = 0;
@@ -219,6 +219,10 @@ class ArchiveBuilder
             // If pattern looks like a glob or includes a slash, use fnmatch
             if (strpbrk($pattern, "*/?[") !== false || strpos($pattern, '/') !== false || strpos($pattern, '\\') !== false) {
                 if (fnmatch($pattern, $relativePath)) {
+                    return true;
+                }
+                $alt = '*/*' . ltrim($pattern, '/');
+                if (fnmatch($alt, $relativePath)) {
                     return true;
                 }
             } else {

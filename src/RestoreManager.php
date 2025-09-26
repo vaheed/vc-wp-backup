@@ -380,30 +380,7 @@ class RestoreManager
         }
     }
 
-    private function recurseCopy(string $src, string $dst): void
-    {
-        if (!file_exists($src)) {
-            return;
-        }
-        $dir = opendir($src);
-        if ($dir === false) {
-            return;
-        }
-        @mkdir($dst, 0755, true);
-        while (false !== ($file = readdir($dir))) {
-            if ($file === '.' || $file === '..') {
-                continue;
-            }
-            $srcPath = $src . '/' . $file;
-            $dstPath = $dst . '/' . $file;
-            if (is_dir($srcPath)) {
-                $this->recurseCopy($srcPath, $dstPath);
-            } else {
-                copy($srcPath, $dstPath);
-            }
-        }
-        closedir($dir);
-    }
+    // Legacy simple copy kept in history; use copyDirWithProgress instead.
 
     private function cleanupRestoreArtifacts(string $archivePath, ?string $tmpDir): void
     {

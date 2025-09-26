@@ -57,6 +57,10 @@ class BackupManager
         // Prepare paths
         $paths = $this->resolvePaths($type, $cfg);
         $exclude = $cfg['backup']['exclude'] ?? [];
+        // Always exclude our own working directory from backups
+        if (!in_array('wp-content/uploads/virakcloud-backup', $exclude, true)) {
+            $exclude[] = 'wp-content/uploads/virakcloud-backup';
+        }
         $this->logger->debug('paths_resolved', [
             'type' => $type,
             'paths' => $paths,
