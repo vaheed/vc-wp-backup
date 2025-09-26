@@ -523,18 +523,13 @@ class RestoreManager
         };
         $presOk = $has($preserved);
         $impOk = $has($imported);
-        if ($presOk && !$impOk) {
-            update_option('vcbk_settings', $preserved, false);
-            $this->logger->info('restore_settings_preserved');
-            return;
-        }
-        if ($presOk && $impOk) {
+        if ($presOk) {
             // Keep current credentials to avoid breaking future backups
             update_option('vcbk_settings', $preserved, false);
             $this->logger->info('restore_settings_preserved');
             return;
         }
-        if (!$presOk && $impOk) {
+        if ($impOk) {
             // Use settings from the backup when current site had nothing configured
             update_option('vcbk_settings', $imported, false);
             $this->logger->info('restore_settings_from_backup');
