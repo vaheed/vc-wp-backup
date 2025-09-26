@@ -15,6 +15,22 @@ final class ArchiveBuilderTest extends TestCase
         file_put_contents($this->work . '/file.txt', 'hello');
         mkdir($this->work . '/dir', 0777, true);
         file_put_contents($this->work . '/dir/inner.txt', 'world');
+        // WP shims used by Logger/ArchiveBuilder
+        if (!function_exists('wp_get_upload_dir')) {
+            function wp_get_upload_dir() {
+                $base = sys_get_temp_dir() . '/vcbk-tests';
+                if (!is_dir($base)) {
+                    mkdir($base, 0777, true);
+                }
+                return ['basedir' => $base, 'baseurl' => 'http://example.test'];
+            }
+        }
+        if (!function_exists('wp_mkdir_p')) {
+            function wp_mkdir_p($dir) { return is_dir($dir) ?: mkdir($dir, 0777, true); }
+        }
+        if (!function_exists('trailingslashit')) {
+            function trailingslashit($path){ return rtrim($path, '/\\') . '/'; }
+        }
         if (!function_exists('wp_json_encode')) {
             function wp_json_encode($data, $options = 0) { return json_encode($data, $options); }
         }
@@ -38,4 +54,3 @@ final class ArchiveBuilderTest extends TestCase
         $this->assertSame(hash_file('sha256', $out), $manifest['sha256']);
     }
 }
-

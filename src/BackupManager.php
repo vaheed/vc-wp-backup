@@ -121,6 +121,16 @@ class BackupManager
                 $this->logger->debug('verify', ['ok' => $ok]);
                 $this->logger->setProgress(100, $ok ? __('Complete', 'virakcloud-backup') : __('Finalizing', 'virakcloud-backup'));
                 update_option('vcbk_last_s3_upload', current_time('mysql'), false);
+                // Cleanup local artifacts after successful upload
+                @unlink($archivePath);
+                @unlink($manifestLocal);
+                if (!empty($dbDumpPath) && is_string($dbDumpPath)) {
+                    @unlink($dbDumpPath);
+                }
+                $this->logger->info('local_cleanup', [
+                    'archive_deleted' => !file_exists($archivePath),
+                    'manifest_deleted' => !file_exists($manifestLocal),
+                ]);
             } catch (\Throwable $e) {
                 $this->logger->error('s3_upload_failed', [
                     'message' => $e->getMessage(),
