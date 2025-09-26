@@ -999,9 +999,15 @@ class Admin
                 // Set a sensible ContentType so browsers don't try to auto-decompress
                 'ContentType' => (function (string $name): string {
                     $ln = strtolower($name);
-                    if (str_ends_with($ln, '.zip')) { return 'application/zip'; }
-                    if (str_ends_with($ln, '.tar.gz') || str_ends_with($ln, '.tgz')) { return 'application/gzip'; }
-                    if (str_ends_with($ln, '.json')) { return 'application/json'; }
+                    if (str_ends_with($ln, '.zip')) {
+                        return 'application/zip';
+                    }
+                    if (str_ends_with($ln, '.tar.gz') || str_ends_with($ln, '.tgz')) {
+                        return 'application/gzip';
+                    }
+                    if (str_ends_with($ln, '.json')) {
+                        return 'application/json';
+                    }
                     return 'application/octet-stream';
                 })($name),
                 'ContentEncoding' => 'identity',
