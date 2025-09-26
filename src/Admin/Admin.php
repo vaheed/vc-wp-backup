@@ -297,7 +297,6 @@ class Admin
             echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
         }
         }
-        }
         echo '</div>';
 
         // Health (previously on Status page)
