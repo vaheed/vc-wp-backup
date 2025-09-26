@@ -62,13 +62,12 @@ class ArchiveBuilder
             @unlink($tar);
         }
 
-        // Hash (may be expensive on large files; try to avoid timeouts)
+        // Hash (may be expensive on large files; extend time limit but avoid WP-only calls here)
         $hash = null;
         try {
             if (function_exists('set_time_limit')) {
                 @set_time_limit(0);
             }
-            $this->logger->setProgress(60, __('Verifying', 'virakcloud-backup'));
             $hash = hash_file('sha256', $output);
         } catch (\Throwable $e) {
             $this->logger->error('archive_hash_failed', ['message' => $e->getMessage()]);
