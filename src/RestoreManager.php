@@ -98,33 +98,42 @@ class RestoreManager
         $this->logger->info('restore_full_start', ['archive' => basename($archivePath)]);
         $this->logger->setProgress(10, __('Preparing', 'virakcloud-backup'));
 
-        // Extract
-        $tmp = wp_tempnam('vcbk-restore-full');
-        if (!$tmp) {
-            throw new \RuntimeException('Cannot create temp file');
-        }
-        $tmpDir = $tmp . '-dir';
-        wp_mkdir_p($tmpDir);
-        $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
-        if ($ext === 'zip') {
-            $zip = new \ZipArchive();
-            if ($zip->open($archivePath) !== true) {
-                throw new \RuntimeException('Cannot open archive');
+        // Extract with robust error handling
+        try {
+            $tmp = wp_tempnam('vcbk-restore-full');
+            if (!$tmp) {
+                throw new \RuntimeException('Cannot create temp file');
             }
-            $zip->extractTo($tmpDir);
-            $zip->close();
-        } else {
-            if (str_ends_with($archivePath, '.tar.gz')) {
-                $pharGz = new \PharData($archivePath);
-                $tarPath = substr($archivePath, 0, -3);
-                $pharGz->decompress();
-                $phar = new \PharData($tarPath);
-                $phar->extractTo($tmpDir, null, true);
-                @unlink($tarPath);
+            $tmpDir = $tmp . '-dir';
+            wp_mkdir_p($tmpDir);
+            $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
+            if ($ext === 'zip') {
+                if (!class_exists('ZipArchive')) {
+                    throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                }
+                $zip = new \ZipArchive();
+                if ($zip->open($archivePath) !== true) {
+                    throw new \RuntimeException('Cannot open ZIP archive');
+                }
+                $zip->extractTo($tmpDir);
+                $zip->close();
             } else {
-                $phar = new \PharData($archivePath);
-                $phar->extractTo($tmpDir, null, true);
+                if (str_ends_with($archivePath, '.tar.gz')) {
+                    $pharGz = new \PharData($archivePath);
+                    $tarPath = substr($archivePath, 0, -3);
+                    $pharGz->decompress();
+                    $phar = new \PharData($tarPath);
+                    $phar->extractTo($tmpDir, null, true);
+                    @unlink($tarPath);
+                } else {
+                    $phar = new \PharData($archivePath);
+                    $phar->extractTo($tmpDir, null, true);
+                }
             }
+        } catch (\Throwable $e) {
+            $this->logger->error('restore_full_extract_failed', ['message' => $e->getMessage()]);
+            $this->logger->setProgress(12, __('Extraction failed', 'virakcloud-backup'));
+            throw $e;
         }
 
         // Find WP root inside extracted data
@@ -280,34 +289,43 @@ class RestoreManager
             wp_mkdir_p($snapshotDir);
         }
 
-        // Extract archive
-        $tmp = wp_tempnam('vcbk-restore');
-        if (!$tmp) {
-            throw new \RuntimeException('Cannot create temp dir');
-        }
-        $tmpDir = $tmp . '-dir';
-        wp_mkdir_p($tmpDir);
-        $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
-        if ($ext === 'zip') {
-            $zip = new \ZipArchive();
-            if ($zip->open($archivePath) !== true) {
-                throw new \RuntimeException('Cannot open archive');
+        // Extract archive (non-full mode) with error handling
+        try {
+            $tmp = wp_tempnam('vcbk-restore');
+            if (!$tmp) {
+                throw new \RuntimeException('Cannot create temp dir');
             }
-            $zip->extractTo($tmpDir);
-            $zip->close();
-        } else {
-            // Handle .tar.gz and .tar
-            if (str_ends_with($archivePath, '.tar.gz')) {
-                $pharGz = new \PharData($archivePath);
-                $tarPath = substr($archivePath, 0, -3); // remove .gz
-                $pharGz->decompress();
-                $phar = new \PharData($tarPath);
-                $phar->extractTo($tmpDir, null, true);
-                @unlink($tarPath);
+            $tmpDir = $tmp . '-dir';
+            wp_mkdir_p($tmpDir);
+            $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
+            if ($ext === 'zip') {
+                if (!class_exists('ZipArchive')) {
+                    throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                }
+                $zip = new \ZipArchive();
+                if ($zip->open($archivePath) !== true) {
+                    throw new \RuntimeException('Cannot open ZIP archive');
+                }
+                $zip->extractTo($tmpDir);
+                $zip->close();
             } else {
-                $phar = new \PharData($archivePath);
-                $phar->extractTo($tmpDir, null, true);
+                // Handle .tar.gz and .tar
+                if (str_ends_with($archivePath, '.tar.gz')) {
+                    $pharGz = new \PharData($archivePath);
+                    $tarPath = substr($archivePath, 0, -3); // remove .gz
+                    $pharGz->decompress();
+                    $phar = new \PharData($tarPath);
+                    $phar->extractTo($tmpDir, null, true);
+                    @unlink($tarPath);
+                } else {
+                    $phar = new \PharData($archivePath);
+                    $phar->extractTo($tmpDir, null, true);
+                }
             }
+        } catch (\Throwable $e) {
+            $this->logger->error('restore_extract_failed', ['message' => $e->getMessage()]);
+            $this->logger->setProgress(22, __('Extraction failed', 'virakcloud-backup'));
+            throw $e;
         }
         $this->logger->setProgress(45, __('Unpacked', 'virakcloud-backup'));
 
