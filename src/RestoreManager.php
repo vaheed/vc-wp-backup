@@ -25,8 +25,12 @@ class RestoreManager
         }
         // Avoid timeouts during large downloads
         @ignore_user_abort(true);
-        if (function_exists('set_time_limit')) { @set_time_limit(0); }
-        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+        if (function_exists('wp_raise_memory_limit')) {
+            @wp_raise_memory_limit('admin');
+        }
         $cfg = $this->settings->get();
         $client = (new S3ClientFactory($this->settings, $this->logger))->create();
         $bucket = (string) ($cfg['s3']['bucket'] ?? '');
@@ -40,7 +44,8 @@ class RestoreManager
         $local = $restoreDir . '/' . basename($key);
         $this->logger->info('restore_download_start', ['key' => $key]);
         $this->logger->setProgress(5, __('Downloading', 'virakcloud-backup'));
-        $start = 5; $end = 18;
+        $start = 5;
+        $end = 18;
         $client->getObject([
             'Bucket' => $bucket,
             'Key' => $key,
@@ -79,8 +84,12 @@ class RestoreManager
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
         @ignore_user_abort(true);
-        if (function_exists('set_time_limit')) { @set_time_limit(0); }
-        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+        if (function_exists('wp_raise_memory_limit')) {
+            @wp_raise_memory_limit('admin');
+        }
         $preservePlugin = array_key_exists('preserve_plugin', $options) ? (bool) $options['preserve_plugin'] : true;
         // Capture current settings so we can optionally preserve/merge creds after DB import
         $preservedSettings = $this->settings->get();
@@ -219,7 +228,8 @@ class RestoreManager
         $local = $restoreDir . '/' . basename($key);
         $this->logger->info('restore_full_download_start', ['key' => $key]);
         $this->logger->setProgress(5, __('Downloading', 'virakcloud-backup'));
-        $start = 5; $end = 18;
+        $start = 5;
+        $end = 18;
         $client->getObject([
             'Bucket' => $bucket,
             'Key' => $key,
@@ -252,8 +262,12 @@ class RestoreManager
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
         @ignore_user_abort(true);
-        if (function_exists('set_time_limit')) { @set_time_limit(0); }
-        if (function_exists('wp_raise_memory_limit')) { @wp_raise_memory_limit('admin'); }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+        if (function_exists('wp_raise_memory_limit')) {
+            @wp_raise_memory_limit('admin');
+        }
         // Touch settings to make dependency explicit for analysis
         $this->settings->get();
         $this->logger->info('restore_start', ['archive' => basename($archivePath)]);
@@ -409,14 +423,19 @@ class RestoreManager
 
     private function rrmdir(string $dir): void
     {
-        if (!is_dir($dir)) { return; }
+        if (!is_dir($dir)) {
+            return;
+        }
         $it = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($it as $path) {
-            if ($path->isDir()) { @rmdir((string) $path); }
-            else { @unlink((string) $path); }
+            if ($path->isDir()) {
+                @rmdir((string) $path);
+            } else {
+                @unlink((string) $path);
+            }
         }
         @rmdir($dir);
     }
@@ -432,7 +451,9 @@ class RestoreManager
         );
         $total = 0;
         foreach ($it as $p => $info) {
-            if ($info->isFile()) { $total += @filesize((string) $p) ?: 0; }
+            if ($info->isFile()) {
+                $total += @filesize((string) $p) ?: 0;
+            }
         }
         $copied = 0;
         $it2 = new \RecursiveIteratorIterator(
@@ -443,10 +464,14 @@ class RestoreManager
             $rel = ltrim(substr((string) $path, strlen($src)), '/');
             $target = rtrim($dst, '/') . '/' . $rel;
             if ($info->isDir()) {
-                if (!is_dir($target)) { @mkdir($target, 0755, true); }
+                if (!is_dir($target)) {
+                    @mkdir($target, 0755, true);
+                }
             } else {
                 $dir = dirname($target);
-                if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0755, true);
+                }
                 @copy($path, $target);
                 $copied += @filesize((string) $path) ?: 0;
                 if ($total > 0) {
