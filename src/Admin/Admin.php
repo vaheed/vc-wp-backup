@@ -308,7 +308,7 @@ class Admin
                             'vcbk_download_backup'
                         );
                         echo '<tr><td>' . esc_html($key) . '</td>'
-                            . '<td>' . esc_html($size) . '</td>'
+                            . '<td>' . esc_html((string) $size) . '</td>'
                             . '<td class="vcbk-actions">'
                             . '<a class="button vcbk-btn vcbk-btn--secondary" href="' . esc_url($restoreUrl) . '"><span class="dashicons dashicons-update"></span>' . esc_html__('Restore', 'virakcloud-backup') . '</a> '
                             . '<a class="button vcbk-btn vcbk-btn--secondary" href="' . esc_url($dlUrl) . '"><span class="dashicons dashicons-download"></span>' . esc_html__('Download', 'virakcloud-backup') . '</a>'
