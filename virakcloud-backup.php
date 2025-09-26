@@ -4,7 +4,7 @@
  * Plugin Name: VirakCloud Backup & Migrate
  * Plugin URI: https://virakcloud.com
  * Description: Backup, restore, and migrate WordPress to VirakCloud S3-compatible storage with scheduled backups.
- * Version: 0.1.3
+ * Version: 1.0.1
  * Author: VirakCloud
  * Author URI: https://virakcloud.com
  * Text Domain: virakcloud-backup
@@ -14,7 +14,7 @@
 defined('ABSPATH') || exit;
 
 // Basic constants
-define('VCBK_VERSION', '0.1.3');
+define('VCBK_VERSION', '1.0.1');
 define('VCBK_PLUGIN_FILE', __FILE__);
 define('VCBK_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VCBK_PLUGIN_URL', plugin_dir_url(__FILE__));

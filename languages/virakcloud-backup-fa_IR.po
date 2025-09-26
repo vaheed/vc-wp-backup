@@ -60,4 +60,81 @@ msgstr "وب‌سایت"
 
 msgid "Documentation"
 msgstr "مستندات"
+msgid "Recent Backups"
+msgstr "پشتیبان‌های اخیر"
+
+msgid "Open Backups"
+msgstr "باز کردن صفحه پشتیبان‌ها"
+
+msgid "Next scheduled backup:"
+msgstr "زمان‌بندی بعدی پشتیبان:"
+
+msgid "Backup Type"
+msgstr "نوع پشتیبان"
+
+msgid "Types:"
+msgstr "انواع:"
+
+msgid "full = database + all WordPress files (core, wp-content). "
+msgstr "کامل = پایگاه‌داده + همه فایل‌های وردپرس (هسته و wp-content). "
+
+msgid "db = only the database export (.sql). "
+msgstr "بانک‌اطلاعاتی = فقط خروجی پایگاه‌داده (.sql). "
+
+msgid "files = only wp-content (themes, plugins, uploads). "
+msgstr "فایل‌ها = فقط wp-content (قالب‌ها، افزونه‌ها، آپلودها). "
+
+msgid "incremental = database + files changed since the last backup."
+msgstr "افزایشی = پایگاه‌داده + فایل‌های تغییر کرده از زمان آخرین پشتیبان."
+
+msgid "Restore"
+msgstr "بازیابی"
+
+msgid "Dry Run (extract and validate only)"
+msgstr "اجرای آزمایشی (فقط استخراج و اعتبارسنجی)"
+
+msgid "Start Restore"
+msgstr "شروع بازیابی"
+
+msgid "Rewrite URLs"
+msgstr "بازنویسی آدرس‌ها"
+
+msgid "From"
+msgstr "از"
+
+msgid "To"
+msgstr "به"
+
+msgid "Rewriting URLs"
+msgstr "بازنویسی آدرس‌ها"
+
+msgid "Dry run complete"
+msgstr "اجرای آزمایشی به پایان رسید"
+
+msgid "Status"
+msgstr "وضعیت"
+
+msgid "Last backup"
+msgstr "آخرین پشتیبان"
+
+msgid "Next run"
+msgstr "اجرای بعدی"
+
+msgid "PHP memory_limit"
+msgstr "محدودیت حافظه PHP"
+
+msgid "Max execution time"
+msgstr "حداکثر زمان اجرا"
+
+msgid "Free disk space"
+msgstr "فضای خالی دیسک"
+
+msgid "VirakCloud S3 connectivity"
+msgstr "اتصال VirakCloud S3"
+
+msgid "Configure your S3 bucket in Settings to see recent backups."
+msgstr "برای دیدن پشتیبان‌های اخیر، در تنظیمات نام سطل S3 را تنظیم کنید."
+
+msgid "S3 bucket is not configured. Please set it in Settings."
+msgstr "سطل S3 پیکربندی نشده است. لطفاً در تنظیمات آن را مشخص کنید."
 
