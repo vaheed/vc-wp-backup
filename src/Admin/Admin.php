@@ -246,7 +246,7 @@ class Admin
             echo '<p>' . $labelLastS3 . ' ' . $valLastS3 . '</p>';
         }
         $labelNext = esc_html__('Next scheduled backup:', 'virakcloud-backup');
-        $valNext = esc_html($nextText);
+        $valNext = esc_html((string) $nextText);
         echo '<p>' . $labelNext . ' ' . $valNext . '</p>';
         $backupsUrl = esc_url(admin_url('admin.php?page=vcbk-backups'));
         $btn = esc_html__('Open Backups', 'virakcloud-backup');
@@ -339,7 +339,7 @@ class Admin
         $ok = (bool) $nextTs;
         echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
             . '<th>' . esc_html__('Next run', 'virakcloud-backup') . '</th>'
-            . '<td>' . esc_html($nextText) . '</td></tr>';
+            . '<td>' . esc_html((string) $nextText) . '</td></tr>';
 
         $ok = (int) wp_convert_hr_to_bytes((string) $mem) >= 256 * 1024 * 1024;
         echo '<tr class="' . esc_attr($ok ? 'vcbk-ok' : 'vcbk-warn') . '">'
