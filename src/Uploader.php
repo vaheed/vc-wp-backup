@@ -61,10 +61,6 @@ class Uploader
         $uploadId = $create['UploadId'];
         $parts = [];
 
-        $fh = fopen($filePath, 'rb');
-        if (!$fh) {
-            throw new \RuntimeException('Cannot open file for upload');
-        }
         $partNumber = 1;
         $offset = 0;
         while ($offset < $size) {
@@ -74,8 +70,17 @@ class Uploader
             }
             /** @var positive-int $length */
             $length = $length;
-            // Stream the part without loading it fully into memory
-            $body = new LimitStream(Utils::streamFor($fh), $length, $offset);
+            // Open a fresh handle per part to avoid pointer/ftell issues in SDK
+            $fp = fopen($filePath, 'rb');
+            if (!$fp) {
+                throw new \RuntimeException('Cannot open file for upload');
+            }
+            if (fseek($fp, $offset) !== 0) {
+                fclose($fp);
+                throw new \RuntimeException('Seek failed during multipart upload');
+            }
+            // Limit read window to this part size
+            $body = new LimitStream(Utils::streamFor($fp), $length, 0);
             $result = $this->client->uploadPart([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
@@ -84,6 +89,9 @@ class Uploader
                 'Body' => $body,
                 'ContentLength' => $length,
             ]);
+            // Close part handle after transmission
+            try { $body->close(); } catch (\Throwable $e) { /* ignore */ }
+            fclose($fp);
             $parts[] = [
                 'PartNumber' => $partNumber,
                 'ETag' => $result['ETag'],
@@ -98,7 +106,7 @@ class Uploader
             $partNumber++;
             $offset += $length;
         }
-        fclose($fh);
+        // Ensure no stray handles
 
         $this->client->completeMultipartUpload([
             'Bucket' => $this->bucket,
