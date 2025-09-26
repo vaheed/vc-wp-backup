@@ -111,7 +111,6 @@ class RestoreManager
         }
 
         // Import DB if present at root of extracted dir
-        $preserved = $this->settings->get();
         $sqlPaths = array_merge(
             glob($tmpDir . '/*.sql') ?: [],
             glob($srcRoot . '/*.sql') ?: []
@@ -119,9 +118,8 @@ class RestoreManager
         if (!empty($sqlPaths)) {
             $this->logger->setProgress(45, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlPaths[0]);
-            // Preserve current plugin settings across restore
-            update_option('vcbk_settings', $preserved, false);
-            $this->logger->info('restore_settings_preserved');
+            // For full-site restore, keep the settings from the backup (do NOT overwrite with current)
+            $this->logger->info('restore_db_import_complete');
         }
 
         $this->logger->setProgress(65, __('Restoring Files', 'virakcloud-backup'));

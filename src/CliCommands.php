@@ -29,8 +29,11 @@ class CliCommands
             case 'restore-full':
                 self::restoreFull($args, $assoc);
                 break;
+            case 'clean-local':
+                self::cleanLocal($args, $assoc);
+                break;
             default:
-                WP_CLI::log('Usage: wp vcbk <backup|schedule|restore|restore-full|migrate>');
+                WP_CLI::log('Usage: wp vcbk <backup|schedule|restore|restore-full|migrate|clean-local>');
         }
     }
 
@@ -127,5 +130,21 @@ class CliCommands
         $mm = new MigrationManager(new Logger());
         $mm->searchReplace($from, $to);
         WP_CLI::success('Migration search/replace complete');
+    }
+
+    /**
+     * Remove old local archives, keeping N latest (default 1).
+     * Usage: wp vcbk clean-local [--keep=1]
+     * @param string[] $args
+     * @param array<string, string> $assoc
+     */
+    public static function cleanLocal(array $args, array $assoc): void
+    {
+        $keep = isset($assoc['keep']) ? (int) $assoc['keep'] : 1;
+        $settings = new Settings();
+        $logger = new Logger();
+        $bm = new BackupManager($settings, $logger);
+        $deleted = $bm->pruneLocal($keep);
+        WP_CLI::success("Deleted $deleted local file(s)");
     }
 }

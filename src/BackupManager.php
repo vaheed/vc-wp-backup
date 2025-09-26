@@ -156,6 +156,15 @@ class BackupManager
 
         // Retention policies could be applied here (list, prune)
         $this->logger->info('backup_complete', ['archive' => $keyArchive]);
+        // Prune local archives to keep disk usage low (keep latest only by default)
+        try {
+            $deleted = $this->pruneLocal(1);
+            if ($deleted > 0) {
+                $this->logger->info('local_prune', ['deleted' => $deleted]);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error('local_prune_failed', ['message' => $e->getMessage()]);
+        }
         update_option('vcbk_last_backup', current_time('mysql'));
 
         return ['key' => $keyArchive, 'manifest' => $keyManifest, 'local' => $archivePath];
@@ -264,5 +273,47 @@ class BackupManager
             $escaped = implode(',', array_map('strval', $escaped));
         }
         return "'" . $escaped . "'";
+    }
+
+    /**
+     * Remove old local archives in uploads/virakcloud-backup/archives, keeping the most recent N.
+     * @return int Number of files deleted (archives + manifests)
+     */
+    public function pruneLocal(int $keep = 1): int
+    {
+        $keep = max(0, $keep);
+        $upload = wp_get_upload_dir();
+        $archivesDir = trailingslashit($upload['basedir']) . 'virakcloud-backup/archives';
+        if (!is_dir($archivesDir)) {
+            return 0;
+        }
+        // Collect archives (.zip and .tar.gz)
+        $files = [];
+        foreach (glob($archivesDir . '/backup-*.zip') ?: [] as $f) {
+            $files[] = $f;
+        }
+        foreach (glob($archivesDir . '/backup-*.tar.gz') ?: [] as $f) {
+            $files[] = $f;
+        }
+        if (empty($files)) {
+            return 0;
+        }
+        // Sort by mtime DESC
+        usort($files, static function (string $a, string $b): int {
+            return filemtime($b) <=> filemtime($a);
+        });
+        $toDelete = array_slice($files, $keep);
+        $deleted = 0;
+        foreach ($toDelete as $path) {
+            if (is_file($path) && @unlink($path)) {
+                $deleted++;
+            }
+            // Also delete corresponding manifest if present
+            $manifest = $path . '.manifest.json';
+            if (is_file($manifest) && @unlink($manifest)) {
+                $deleted++;
+            }
+        }
+        return $deleted;
     }
 }

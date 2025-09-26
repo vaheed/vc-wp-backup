@@ -582,9 +582,19 @@ class Admin
                 'virakcloud-backup'
             )
             . '</p>';
-        $bucket = (string) ($this->settings->get()['s3']['bucket'] ?? '');
+        $s3 = $this->settings->get()['s3'] ?? [];
+        $bucket = (string) ($s3['bucket'] ?? '');
         if ($bucket === '') {
             echo '<div class="vcbk-card"><p class="vcbk-warn vcbk-alert">' . esc_html__('S3 bucket is not configured. Please set it in Settings.', 'virakcloud-backup') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+        $access = (string) ($s3['access_key'] ?? '');
+        $secret = (string) ($s3['secret_key'] ?? '');
+        if ($access === '' || $secret === '') {
+            echo '<div class="vcbk-card"><p class="vcbk-warn vcbk-alert">'
+                . esc_html__('S3 access/secret keys are not configured. Please set them in Settings before restoring.', 'virakcloud-backup')
+                . '</p></div>';
             echo '</div>';
             return;
         }
@@ -633,6 +643,10 @@ class Admin
                 echo '<input type="checkbox" name="dry_run" /> ';
                 echo esc_html__('Dry Run (extract and validate only)', 'virakcloud-backup');
                 echo '</label> ';
+                echo '<label style="margin-left:12px">';
+                echo '<input type="checkbox" name="full_site" /> ';
+                echo esc_html__('Full site restore (replace WordPress core and wp-config.php)', 'virakcloud-backup');
+                echo '</label> ';
                 // URL rewrite (migration) options
                 $home = home_url();
                 echo '<span style="margin-left:12px">' . esc_html__('Rewrite URLs', 'virakcloud-backup') . ':</span> ';
@@ -673,6 +687,11 @@ class Admin
         }
         $key = isset($_POST['key']) ? sanitize_text_field((string) $_POST['key']) : '';
         $dry = !empty($_POST['dry_run']);
+        $full = !empty($_POST['full_site']);
+        // Auto-detect full-site archive by filename if checkbox not ticked
+        if (!$full && preg_match('/backup-\s*full-?/i', basename($key))) {
+            $full = true;
+        }
         $migrate = isset($_POST['migrate']) && is_array($_POST['migrate']) ? (array) $_POST['migrate'] : [];
         if ($key === '') {
             wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing backup key', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
@@ -686,8 +705,15 @@ class Admin
             if ($from !== '' && $to !== '' && $from !== $to && !$dry) {
                 $options['migrate'] = ['from' => $from, 'to' => $to];
             }
-            $rm->restoreFromS3($key, $options);
-            $msg = $dry ? __('Dry run complete', 'virakcloud-backup') : __('Restore complete', 'virakcloud-backup');
+            if ($full && !$dry) {
+                $rm->restoreFullFromS3($key, ['preserve_plugin' => true] + $options);
+                $msg = __('Full restore complete', 'virakcloud-backup');
+            } else {
+                $rm->restoreFromS3($key, $options);
+                $msg = $dry
+                    ? __('Dry run complete', 'virakcloud-backup')
+                    : __('Restore complete. Please review S3 Settings and ensure your access/secret keys are configured to resume backups.', 'virakcloud-backup');
+            }
             wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-restore')));
         } catch (\Throwable $e) {
             wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-restore')));

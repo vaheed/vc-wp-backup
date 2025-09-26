@@ -93,6 +93,9 @@ msgstr "اجرای آزمایشی (فقط استخراج و اعتبارسنجی
 msgid "Start Restore"
 msgstr "شروع بازیابی"
 
+msgid "Full site restore (replace WordPress core and wp-config.php)"
+msgstr "بازیابی کامل سایت (جایگزینی هسته وردپرس و wp-config.php)"
+
 msgid "Rewrite URLs"
 msgstr "بازنویسی آدرس‌ها"
 
@@ -134,3 +137,277 @@ msgstr "برای دیدن پشتیبان‌های اخیر، در تنظیمات
 
 msgid "S3 bucket is not configured. Please set it in Settings."
 msgstr "سطل S3 پیکربندی نشده است. لطفاً در تنظیمات آن را مشخص کنید."
+
+# Settings page labels
+msgid "VirakCloud S3"
+msgstr "VirakCloud S3"
+
+msgid "Endpoint"
+msgstr "آدرس پایانی (Endpoint)"
+
+msgid "Region"
+msgstr "ناحیه"
+
+msgid "Bucket"
+msgstr "سطل"
+
+msgid "Access Key"
+msgstr "کلید دسترسی"
+
+msgid "Secret Key"
+msgstr "کلید مخفی"
+
+msgid "Path Style"
+msgstr "حالت مسیر (Path Style)"
+
+msgid "Use path-style addressing"
+msgstr "استفاده از آدرس‌دهی به‌صورت مسیر"
+
+msgid "Use path-style addressing (recommended)"
+msgstr "استفاده از آدرس‌دهی به‌صورت مسیر (توصیه‌شده)"
+
+msgid "Schedule"
+msgstr "زمان‌بندی"
+
+msgid "Interval"
+msgstr "بازه"
+
+msgid "Start Time"
+msgstr "زمان شروع"
+
+msgid "Catch up"
+msgstr "جبران"
+
+msgid "Run missed backups"
+msgstr "اجرای پشتیبان‌های از دست‌رفته"
+
+msgid "Next run (preview)"
+msgstr "اجرای بعدی (پیش‌نمایش)"
+
+msgid "Save Settings"
+msgstr "ذخیره تنظیمات"
+
+msgid "Test S3 Connection"
+msgstr "آزمون اتصال S3"
+
+msgid "Connect Storage"
+msgstr "اتصال ذخیره‌سازی"
+
+msgid "Continue"
+msgstr "ادامه"
+
+msgid "Step 1: S3 Settings"
+msgstr "گام ۱: تنظیمات S3"
+
+msgid "Test Connection"
+msgstr "آزمون اتصال"
+
+msgid "Run Connection Test"
+msgstr "اجرای آزمون اتصال"
+
+msgid "Step 2: Test Connection"
+msgstr "گام ۲: آزمون اتصال"
+
+msgid "Step 3: Schedule Backups"
+msgstr "گام ۳: زمان‌بندی پشتیبان‌ها"
+
+msgid "Finish Setup"
+msgstr "پایان راه‌اندازی"
+
+msgid "Setup is complete. You can run your first backup from the Backups tab."
+msgstr "راه‌اندازی کامل شد. می‌توانید اولین پشتیبان را از برگه «پشتیبان‌ها» اجرا کنید."
+
+msgid "We will try to access your bucket using the settings from Step 1."
+msgstr "با تنظیمات گام ۱ تلاش می‌کنیم به سطل شما دسترسی پیدا کنیم."
+
+# Backups page
+msgid "Backup"
+msgstr "پشتیبان"
+
+msgid "Mode"
+msgstr "حالت"
+
+msgid "Upload to S3 after backup"
+msgstr "پس از پشتیبان‌گیری در S3 بارگذاری شود"
+
+msgid "Last Test Result"
+msgstr "نتیجه آخرین آزمون"
+
+msgid "Latency %d ms, size %d bytes, checksum %s"
+msgstr "تأخیر %d میلی‌ثانیه، اندازه %d بایت، چک‌سام %s"
+
+
+# Logs page
+msgid "Logs"
+msgstr "لاگ‌ها"
+
+msgid "Level"
+msgstr "سطح"
+
+msgid "All"
+msgstr "همه"
+
+msgid "Filter"
+msgstr "فیلتر"
+
+msgid "Download"
+msgstr "دانلود"
+
+msgid "Stop Auto-Scroll"
+msgstr "توقف پیمایش خودکار"
+
+msgid "Copy"
+msgstr "کپی"
+
+msgid "No log file found"
+msgstr "هیچ پرونده لاگی یافت نشد"
+
+# Generic
+msgid "Insufficient permissions"
+msgstr "مجوز کافی وجود ندارد"
+
+msgid "Permission denied"
+msgstr "اجازه داده نشد"
+
+msgid "Missing backup key"
+msgstr "کلید پشتیبان موجود نیست"
+
+msgid "No backups found in S3 prefix backups/."
+msgstr "هیچ پشتیبانی در پیشوند backups/ در S3 یافت نشد."
+
+msgid "OK"
+msgstr "تأیید"
+
+# Schedules list strings
+msgid "Every 2 hours"
+msgstr "هر ۲ ساعت"
+
+msgid "Every 4 hours"
+msgstr "هر ۴ ساعت"
+
+msgid "Every 8 hours"
+msgstr "هر ۸ ساعت"
+
+msgid "Every 12 hours"
+msgstr "هر ۱۲ ساعت"
+
+msgid "Every 2 weeks"
+msgstr "هر ۲ هفته"
+
+msgid "Every month"
+msgstr "هر ماه"
+
+# More pages/menus
+msgid "Schedules"
+msgstr "زمان‌بندی‌ها"
+
+msgid "Setup Wizard"
+msgstr "جادوگر راه‌اندازی"
+
+# Extra states and messages
+msgid "Paused"
+msgstr "متوقف"
+
+msgid "Backup cancelled"
+msgstr "پشتیبان‌گیری لغو شد"
+
+msgid "Backup paused"
+msgstr "پشتیبان‌گیری متوقف شد"
+
+msgid "No backups found yet."
+msgstr "هنوز هیچ پشتیبانی یافت نشد."
+# Progress/status strings
+msgid "Queued"
+msgstr "در صف"
+
+msgid "Preparing"
+msgstr "در حال آماده‌سازی"
+
+msgid "Archiving DB"
+msgstr "در حال بایگانی پایگاه‌داده"
+
+msgid "Archiving Files"
+msgstr "در حال بایگانی فایل‌ها"
+
+msgid "Upload Pending"
+msgstr "در انتظار بارگذاری"
+
+msgid "Uploading"
+msgstr "در حال بارگذاری"
+
+msgid "Verifying"
+msgstr "در حال بررسی"
+
+msgid "Finalizing"
+msgstr "در حال نهایی‌سازی"
+
+msgid "Complete"
+msgstr "تکمیل شد"
+
+msgid "Downloading"
+msgstr "در حال دریافت"
+
+msgid "Downloaded"
+msgstr "دریافت شد"
+
+msgid "Restoring DB"
+msgstr "در حال بازیابی پایگاه‌داده"
+
+msgid "Restoring Files"
+msgstr "در حال بازیابی فایل‌ها"
+
+
+msgid "Unpacked"
+msgstr "استخراج شد"
+
+# Dashboard strings
+msgid "Last S3 upload:"
+msgstr "آخرین بارگذاری S3:"
+
+msgid "Last backup:"
+msgstr "آخرین پشتیبان:"
+
+
+msgid "not scheduled"
+msgstr "زمان‌بندی نشده"
+
+msgid "never"
+msgstr "هرگز"
+
+msgid "unknown"
+msgstr "نامشخص"
+
+msgid "ago"
+msgstr "پیش"
+
+# S3 test/messages
+msgid "S3 connection success!"
+msgstr "اتصال به S3 موفق بود!"
+
+msgid "S3 connection failed: "
+msgstr "اتصال به S3 ناموفق بود: "
+
+msgid "Backup running and uploading to S3. Check logs for progress."
+msgstr "پشتیبان‌گیری در حال اجرا و بارگذاری در S3 است. برای پیشرفت، لاگ‌ها را بررسی کنید."
+
+msgid "Backup running (no S3 upload). Check logs for progress."
+msgstr "پشتیبان‌گیری در حال اجرا (بدون بارگذاری در S3). برای پیشرفت، لاگ‌ها را بررسی کنید."
+
+msgid "Backup failed: "
+msgstr "پشتیبان‌گیری ناموفق بود: "
+
+msgid "Test backup failed: "
+msgstr "پشتیبان آزمایشی ناموفق بود: "
+
+msgid "Test backup uploaded in %1$d ms (%.1f KiB/s)."
+msgstr "پشتیبان آزمایشی در %1$d میلی‌ثانیه بارگذاری شد (%.1f کیبی‌بایت/ثانیه)."
+
+# Restore page guidance
+msgid "S3 access/secret keys are not configured. Please set them in Settings before restoring."
+msgstr "کلیدهای دسترسی/مخفی S3 پیکربندی نشده‌اند. لطفاً پیش از بازیابی، آن‌ها را در تنظیمات وارد کنید."
+
+msgid "Restore complete. Please review S3 Settings and ensure your access/secret keys are configured to resume backups."
+msgstr "بازیابی کامل شد. لطفاً تنظیمات S3 را بررسی کنید و مطمئن شوید کلیدهای دسترسی/مخفی پیکربندی شده‌اند تا پشتیبان‌گیری‌ها از سر گرفته شوند."
+
+msgid "Full restore complete"
+msgstr "بازیابی کامل به پایان رسید"
