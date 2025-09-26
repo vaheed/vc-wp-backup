@@ -33,7 +33,10 @@ class Admin
         add_action('admin_post_vcbk_test_s3', [$this, 'handleTestS3']);
         add_action('admin_post_vcbk_run_test', [$this, 'handleRunTest']);
         add_action('admin_post_vcbk_download_log', [$this, 'handleDownloadLog']);
+        add_action('admin_post_vcbk_download_backup', [$this, 'handleDownloadBackup']);
+        add_action('admin_post_vcbk_upload_backup', [$this, 'handleUploadBackup']);
         add_action('admin_post_vcbk_run_restore', [$this, 'handleRunRestore']);
+        add_action('admin_post_vcbk_upload_restore', [$this, 'handleUploadRestore']);
         add_action('wp_ajax_vcbk_tail_logs', [$this, 'ajaxTailLogs']);
         add_action('wp_ajax_vcbk_progress', [$this, 'ajaxProgress']);
         add_action('wp_ajax_vcbk_job_control', [$this, 'ajaxJobControl']);
@@ -286,8 +289,13 @@ class Admin
                         $key = $it['key'];
                         $size = size_format((int) $it['size']);
                         $restoreUrl = add_query_arg('key', rawurlencode($key), admin_url('admin.php?page=vcbk-restore'));
+                        $dlUrl = wp_nonce_url(
+                            add_query_arg('key', rawurlencode($key), admin_url('admin-post.php?action=vcbk_download_backup')),
+                            'vcbk_download_backup'
+                        );
                         echo '<li>' . esc_html($key . ' (' . $size . ')') . ' — ';
                         echo '<a href="' . esc_url($restoreUrl) . '">' . esc_html__('Restore', 'virakcloud-backup') . '</a>';
+                        echo ' | <a href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
                         echo '</li>';
                     }
                     echo '</ul>';
@@ -531,6 +539,14 @@ class Admin
         echo '<input type="hidden" name="action" value="vcbk_run_test" />';
         echo '<button class="button">' . esc_html__('Run Test Backup', 'virakcloud-backup') . '</button>';
         echo '</form>';
+        // Upload a backup file to S3 for safekeeping
+        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
+        wp_nonce_field('vcbk_upload_backup');
+        echo '<input type="hidden" name="action" value="vcbk_upload_backup" />';
+        echo '<label>' . esc_html__('Upload backup to S3', 'virakcloud-backup') . ' ';
+        echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" /></label> ';
+        echo '<button class="button">' . esc_html__('Upload', 'virakcloud-backup') . '</button>';
+        echo '</form>';
         echo '</div>';
         $test = get_option('vcbk_last_test');
         if (is_array($test)) {
@@ -678,6 +694,16 @@ class Admin
                 echo esc_html__('Start Restore', 'virakcloud-backup');
                 echo '</button>';
                 echo '</form>';
+                // Upload-and-restore form
+                echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:12px">';
+                wp_nonce_field('vcbk_upload_restore');
+                echo '<input type="hidden" name="action" value="vcbk_upload_restore" />';
+                echo '<label>' . esc_html__('Upload backup', 'virakcloud-backup') . ' ';
+                echo '<input type="file" name="backup_file" accept=".zip,.tar,.gz" /></label> ';
+                echo '<label style="margin-left:10px"><input type="checkbox" name="dry_run" /> ' . esc_html__('Dry Run', 'virakcloud-backup') . '</label> ';
+                echo '<label style="margin-left:10px"><input type="checkbox" name="full_site" /> ' . esc_html__('Full site restore', 'virakcloud-backup') . '</label> ';
+                echo '<button class="button" style="margin-left:10px">' . esc_html__('Upload and Restore', 'virakcloud-backup') . '</button>';
+                echo '</form>';
             }
         } catch (\Throwable $e) {
             echo '<div class="notice notice-error"><p>' . esc_html($e->getMessage()) . '</p></div>';
@@ -689,7 +715,11 @@ class Admin
         echo '<div id="vcbk-progress" class="vcbk-progress"><div id="vcbk-progress-bar" class="vcbk-progress-bar"></div></div>';
         echo '<p id="vcbk-progress-stage" class="vcbk-muted" style="margin-top:6px"></p>';
         echo '<p class="vcbk-actions">';
-        echo '<button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button>';
+        echo '<button class="button" id="vcbk-toggle-autorefresh">' . esc_html__('Start Auto-Refresh', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button" id="vcbk-toggle-scroll">' . esc_html__('Stop Auto-Scroll', 'virakcloud-backup') . '</button> ';
+        echo '<button class="button" id="vcbk-copy-log">' . esc_html__('Copy', 'virakcloud-backup') . '</button> ';
+        $dlUrl = wp_nonce_url(admin_url('admin-post.php?action=vcbk_download_log'), 'vcbk_download_log');
+        echo '<a class="button" href="' . esc_url($dlUrl) . '">' . esc_html__('Download', 'virakcloud-backup') . '</a>';
         echo '</p>';
         echo '<pre id="vcbk-log" class="vcbk-log"></pre>';
         echo '</div>';
@@ -914,6 +944,105 @@ class Admin
         header('Content-Disposition: attachment; filename="' . basename($file) . '"');
         header('Content-Length: ' . (string) filesize($file));
         readfile($file);
+        exit;
+    }
+
+    public function handleDownloadBackup(): void
+    {
+        check_admin_referer('vcbk_download_backup');
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        $key = isset($_GET['key']) ? sanitize_text_field((string) $_GET['key']) : '';
+        if ($key === '') {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing key', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
+            exit;
+        }
+        try {
+            $client = (new S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $this->settings->get()['s3']['bucket'];
+            $cmd = $client->getCommand('GetObject', ['Bucket' => $bucket, 'Key' => $key]);
+            $req = $client->createPresignedRequest($cmd, '+30 minutes');
+            wp_safe_redirect((string) $req->getUri());
+        } catch (\Throwable $e) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-restore')));
+        }
+        exit;
+    }
+
+    public function handleUploadBackup(): void
+    {
+        check_admin_referer('vcbk_upload_backup');
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        if (empty($_FILES['backup_file']) || !is_array($_FILES['backup_file'])) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing file', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-backups')));
+            exit;
+        }
+        $file = $_FILES['backup_file'];
+        if (!empty($file['error'])) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Upload failed', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-backups')));
+            exit;
+        }
+        $tmp = $file['tmp_name'];
+        $name = sanitize_file_name((string) ($file['name'] ?? 'backup-upload.zip'));
+        $sitePrefix = (new \VirakCloud\Backup\Settings())->sitePrefix();
+        $key = 'backups/' . $sitePrefix . '/' . $name;
+        try {
+            $client = (new S3ClientFactory($this->settings, $this->logger))->create();
+            $bucket = $this->settings->get()['s3']['bucket'];
+            $client->putObject([
+                'Bucket' => $bucket,
+                'Key' => $key,
+                'Body' => fopen($tmp, 'rb'),
+            ]);
+            @unlink($tmp);
+            $msg = sprintf('%s %s', __('Uploaded', 'virakcloud-backup'), $key);
+            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-backups')));
+        } catch (\Throwable $e) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-backups')));
+        }
+        exit;
+    }
+
+    public function handleUploadRestore(): void
+    {
+        check_admin_referer('vcbk_upload_restore');
+        if (!current_user_can('update_core')) {
+            wp_die(__('Insufficient permissions', 'virakcloud-backup'));
+        }
+        if (empty($_FILES['backup_file']) || !is_array($_FILES['backup_file'])) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Missing file', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
+            exit;
+        }
+        $file = $_FILES['backup_file'];
+        if (!empty($file['error'])) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode(__('Upload failed', 'virakcloud-backup')), admin_url('admin.php?page=vcbk-restore')));
+            exit;
+        }
+        $tmp = $file['tmp_name'];
+        $name = sanitize_file_name((string) ($file['name'] ?? 'backup-upload.zip'));
+        $upload = wp_get_upload_dir();
+        $restoreDir = trailingslashit($upload['basedir']) . 'virakcloud-backup/restore';
+        wp_mkdir_p($restoreDir);
+        $dest = trailingslashit($restoreDir) . $name;
+        @rename($tmp, $dest);
+        $dry = !empty($_POST['dry_run']);
+        $full = !empty($_POST['full_site']);
+        try {
+            $rm = new RestoreManager($this->settings, $this->logger);
+            if ($full && !$dry) {
+                $rm->restoreFullLocal($dest, ['preserve_plugin' => true]);
+                $msg = __('Full restore complete', 'virakcloud-backup');
+            } else {
+                $rm->restoreLocal($dest, ['dry_run' => $dry]);
+                $msg = $dry ? __('Dry run complete', 'virakcloud-backup') : __('Restore complete.', 'virakcloud-backup');
+            }
+            wp_safe_redirect(add_query_arg('message', rawurlencode($msg), admin_url('admin.php?page=vcbk-restore')));
+        } catch (\Throwable $e) {
+            wp_safe_redirect(add_query_arg('error', rawurlencode($e->getMessage()), admin_url('admin.php?page=vcbk-restore')));
+        }
         exit;
     }
 
