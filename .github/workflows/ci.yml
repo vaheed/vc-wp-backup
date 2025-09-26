@@ -44,11 +44,17 @@ jobs:
         run: composer install --no-dev --prefer-dist --optimize-autoloader
       - name: Build Zip
         run: composer build-zip
+      - name: Prepare Artifact Folder (single-zip installable)
+        run: |
+          rm -rf dist/plugin && mkdir -p dist/plugin
+          sudo apt-get update && sudo apt-get install -y unzip
+          # Extract the built plugin so GitHub Artifacts zips it only once
+          unzip -q dist/virakcloud-backup.zip -d dist/plugin
       - name: Upload Plugin Artifact
         uses: actions/upload-artifact@v4
         with:
           name: virakcloud-backup
-          path: dist/virakcloud-backup.zip
+          path: dist/plugin/virakcloud-backup
           if-no-files-found: error
       - name: Create GitHub Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
