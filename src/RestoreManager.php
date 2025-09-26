@@ -108,15 +108,33 @@ class RestoreManager
             wp_mkdir_p($tmpDir);
             $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
             if ($ext === 'zip') {
-                if (!class_exists('ZipArchive')) {
-                    throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                // Prefer WordPress core unzip implementation for better compatibility
+                if (!function_exists('unzip_file')) {
+                    @require_once ABSPATH . 'wp-admin/includes/file.php';
                 }
-                $zip = new \ZipArchive();
-                if ($zip->open($archivePath) !== true) {
-                    throw new \RuntimeException('Cannot open ZIP archive');
+                $unzipped = false;
+                if (function_exists('unzip_file')) {
+                    $res = unzip_file($archivePath, $tmpDir);
+                    if ($res === true) {
+                        $unzipped = true;
+                    } elseif (is_wp_error($res)) {
+                        // Fall back to ZipArchive below with detailed status
+                        $this->logger->debug('wp_unzip_failed', ['message' => $res->get_error_message()]);
+                    }
                 }
-                $zip->extractTo($tmpDir);
-                $zip->close();
+                if (!$unzipped) {
+                    if (!class_exists('ZipArchive')) {
+                        throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                    }
+                    $zip = new \ZipArchive();
+                    $code = $zip->open($archivePath);
+                    if ($code !== true) {
+                        $msg = method_exists($zip, 'getStatusString') ? (string) $zip->getStatusString() : '';
+                        throw new \RuntimeException('Cannot open ZIP archive (code ' . (string) $code . ') ' . $msg);
+                    }
+                    $zip->extractTo($tmpDir);
+                    $zip->close();
+                }
             } else {
                 if (str_ends_with($archivePath, '.tar.gz')) {
                     $pharGz = new \PharData($archivePath);
@@ -299,15 +317,31 @@ class RestoreManager
             wp_mkdir_p($tmpDir);
             $ext = pathinfo($archivePath, PATHINFO_EXTENSION);
             if ($ext === 'zip') {
-                if (!class_exists('ZipArchive')) {
-                    throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                if (!function_exists('unzip_file')) {
+                    @require_once ABSPATH . 'wp-admin/includes/file.php';
                 }
-                $zip = new \ZipArchive();
-                if ($zip->open($archivePath) !== true) {
-                    throw new \RuntimeException('Cannot open ZIP archive');
+                $unzipped = false;
+                if (function_exists('unzip_file')) {
+                    $res = unzip_file($archivePath, $tmpDir);
+                    if ($res === true) {
+                        $unzipped = true;
+                    } elseif (is_wp_error($res)) {
+                        $this->logger->debug('wp_unzip_failed', ['message' => $res->get_error_message()]);
+                    }
                 }
-                $zip->extractTo($tmpDir);
-                $zip->close();
+                if (!$unzipped) {
+                    if (!class_exists('ZipArchive')) {
+                        throw new \RuntimeException('PHP Zip extension is not installed. Please install php-zip.');
+                    }
+                    $zip = new \ZipArchive();
+                    $code = $zip->open($archivePath);
+                    if ($code !== true) {
+                        $msg = method_exists($zip, 'getStatusString') ? (string) $zip->getStatusString() : '';
+                        throw new \RuntimeException('Cannot open ZIP archive (code ' . (string) $code . ') ' . $msg);
+                    }
+                    $zip->extractTo($tmpDir);
+                    $zip->close();
+                }
             } else {
                 // Handle .tar.gz and .tar
                 if (str_ends_with($archivePath, '.tar.gz')) {
