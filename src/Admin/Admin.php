@@ -810,6 +810,13 @@ class Admin
                 printf('<option value="%s" %s>%s</option>', esc_attr($i), selected($schedule['interval'], $i, false), esc_html($i));
             }
             echo '</select></td></tr>';
+            // Scheduled backup type
+            $types = ['full','db','files','incremental'];
+            echo '<tr><th>' . esc_html__('Backup Type', 'virakcloud-backup') . '</th><td><select name="backup[type]">';
+            foreach ($types as $t) {
+                printf('<option value="%s" %s>%s</option>', esc_attr($t), selected($cfg['backup']['type'], $t, false), esc_html($t));
+            }
+            echo '</select></td></tr>';
             echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
             printf('<input type="text" name="schedule[start_time]" value="%s" class="regular-text" placeholder="HH:MM" />', esc_attr($schedule['start_time'] ?? '01:30'));
             echo '</td></tr>';
