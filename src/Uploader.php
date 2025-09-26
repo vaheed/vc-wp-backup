@@ -90,7 +90,11 @@ class Uploader
                 'ContentLength' => $length,
             ]);
             // Close part handle after transmission
-            try { $body->close(); } catch (\Throwable $e) { /* ignore */ }
+            try {
+                $body->close();
+            } catch (\Throwable $e) {
+                // ignore
+            }
             fclose($fp);
             $parts[] = [
                 'PartNumber' => $partNumber,
