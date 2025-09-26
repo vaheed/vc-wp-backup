@@ -32,8 +32,8 @@ class Settings
                     '*/node_modules/*',
                     'wp-content/uploads/virakcloud-backup',
                 ],
-                // Default to tar.gz for maximum portability and restore reliability
-                'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'tar.gz',
+                // Default to zip for better performance on most hosts
+                'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
                 'encryption' => [
                     'enabled' => false,
                     'cipher' => 'AES-256-GCM',
@@ -135,6 +135,10 @@ class Settings
             $allowed = ['full', 'db', 'files', 'incremental'];
             $type = (string) ($data['backup']['type'] ?? $cfg['backup']['type']);
             $cfg['backup']['type'] = in_array($type, $allowed, true) ? $type : 'full';
+            $fmt = isset($data['backup']['archive_format'])
+                ? (string) $data['backup']['archive_format']
+                : (string) ($cfg['backup']['archive_format'] ?? 'zip');
+            $cfg['backup']['archive_format'] = in_array($fmt, ['zip', 'tar.gz'], true) ? $fmt : 'zip';
         }
         return $cfg;
     }

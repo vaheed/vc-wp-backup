@@ -413,7 +413,7 @@ class Admin
         echo '</td></tr>';
         echo '</table>';
 
-        // Schedule section (also editable here for convenience)
+        // Schedule & Backup options
         $schedule = $cfg['schedule'];
         $intervals = ['2h','4h','8h','12h','daily','weekly','fortnightly','monthly'];
         echo '<h2 style="margin-top:24px">' . esc_html__('Schedule', 'virakcloud-backup') . '</h2>';
@@ -429,6 +429,18 @@ class Admin
         echo '<tr><th>' . esc_html__('Backup Type', 'virakcloud-backup') . '</th><td><select name="backup[type]">';
         foreach ($types as $t) {
             printf('<option value="%s" %s>%s</option>', esc_attr($t), selected($cfg['backup']['type'], $t, false), esc_html($t));
+        }
+        echo '</select></td></tr>';
+        // Archive format (zip vs tar.gz)
+        $formats = ['zip' => 'ZIP (.zip)', 'tar.gz' => 'TAR GZip (.tar.gz)'];
+        echo '<tr><th>' . esc_html__('Archive Format', 'virakcloud-backup') . '</th><td><select name="backup[archive_format]">';
+        foreach ($formats as $val => $label) {
+            printf(
+                '<option value="%s" %s>%s</option>',
+                esc_attr($val),
+                selected($cfg['backup']['archive_format'] ?? 'zip', $val, false),
+                esc_html__($label, 'virakcloud-backup')
+            );
         }
         echo '</select></td></tr>';
         echo '<tr><th>' . esc_html__('Start Time', 'virakcloud-backup') . '</th><td>';
