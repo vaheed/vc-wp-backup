@@ -33,11 +33,25 @@ class Uploader
         $size = filesize($filePath) ?: 0;
         if ($size <= 5 * 1024 * 1024) {
             $this->logger->debug('upload_putobject', ['key' => $key, 'size' => $size]);
+            $ct = self::guessContentType($filePath);
+            $md5b64 = '';
+            try {
+                $raw = @md5_file($filePath, true);
+                if ($raw !== false) {
+                    $md5b64 = base64_encode($raw);
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
             $this->client->putObject([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
                 'Body' => fopen($filePath, 'rb'),
-                'ContentType' => self::guessContentType($filePath),
+                'ContentType' => $ct,
+                'ContentEncoding' => 'identity',
+                // MD5 guards against rare in-flight corruption for small objects
+                // (S3 will validate and reject if mismatch)
+                'ContentMD5' => $md5b64 !== '' ? $md5b64 : null,
             ]);
             return ['parts' => 1];
         }
@@ -59,6 +73,7 @@ class Uploader
             'Bucket' => $this->bucket,
             'Key' => $key,
             'ContentType' => self::guessContentType($filePath),
+            'ContentEncoding' => 'identity',
         ]);
         $uploadId = $create['UploadId'];
         $parts = [];

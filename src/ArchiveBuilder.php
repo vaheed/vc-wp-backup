@@ -22,7 +22,7 @@ class ArchiveBuilder
     /**
      * Build an archive of the given paths.
      *
-     * @param string   $format  zip|tar.gz
+     * @param string   $format  zip|tar.gz 
      * @param string[] $paths   Absolute paths to include
      * @param string   $output  Absolute path of the archive file to create
      * @param string[] $exclude Relative path patterns to exclude

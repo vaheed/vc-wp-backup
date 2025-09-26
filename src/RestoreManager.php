@@ -157,9 +157,9 @@ class RestoreManager
                 }
             } else {
                 if ($type === 'tar.gz') {
-                    $pharGz = new \PharData($archivePath);
+                    // Avoid PharData::decompress() which requires phar.readonly=0 on many hosts
                     $tarPath = substr($archivePath, 0, -3);
-                    $pharGz->decompress();
+                    $this->gunzipTo($archivePath, $tarPath);
                     $phar = new \PharData($tarPath);
                     $phar->extractTo($tmpDir, null, true);
                     @unlink($tarPath);
@@ -383,9 +383,9 @@ class RestoreManager
             } else {
                 // Handle .tar.gz and .tar
                 if ($type === 'tar.gz') {
-                    $pharGz = new \PharData($archivePath);
+                    // Avoid PharData::decompress() which requires phar.readonly=0 on many hosts
                     $tarPath = substr($archivePath, 0, -3); // remove .gz
-                    $pharGz->decompress();
+                    $this->gunzipTo($archivePath, $tarPath);
                     $phar = new \PharData($tarPath);
                     $phar->extractTo($tmpDir, null, true);
                     @unlink($tarPath);
@@ -517,6 +517,45 @@ class RestoreManager
             }
         }
         @rmdir($dir);
+    }
+
+    /**
+     * Stream-decompress a .gz file to a target path without using PharData::decompress,
+     * avoiding the phar.readonly restriction present on many hosts.
+     */
+    private function gunzipTo(string $gzPath, string $outPath): void
+    {
+        $in = @gzopen($gzPath, 'rb');
+        if ($in === false) {
+            throw new \RuntimeException('Unable to open gzip file for reading');
+        }
+        $dir = dirname($outPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $out = @fopen($outPath, 'wb');
+        if ($out === false) {
+            @gzclose($in);
+            throw new \RuntimeException('Unable to create output file for decompression');
+        }
+        try {
+            while (!gzeof($in)) {
+                $buf = gzread($in, 131072); // 128 KiB
+                if ($buf === false) {
+                    throw new \RuntimeException('Gzip read error');
+                }
+                if ($buf !== '') {
+                    fwrite($out, $buf);
+                }
+            }
+        } finally {
+            if (is_resource($in)) {
+                @gzclose($in);
+            }
+            if (is_resource($out)) {
+                @fclose($out);
+            }
+        }
     }
 
     /**
