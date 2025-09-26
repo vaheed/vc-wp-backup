@@ -252,50 +252,50 @@ class Admin
             echo '<p class="vcbk-warn vcbk-alert">' . esc_html__('Configure your S3 bucket in Settings to see recent backups.', 'virakcloud-backup') . '</p>';
         } else {
             try {
-            $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
-            $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
-            $items = [];
-            foreach ((array) ($res['Contents'] ?? []) as $obj) {
-                $key = (string) $obj['Key'];
-                if (!str_contains($key, 'backup-')) {
-                    continue;
+                $client = (new \VirakCloud\Backup\S3ClientFactory($this->settings, $this->logger))->create();
+                $res = $client->listObjectsV2(['Bucket' => $bucket, 'Prefix' => 'backups/', 'MaxKeys' => 1000]);
+                $items = [];
+                foreach ((array) ($res['Contents'] ?? []) as $obj) {
+                    $key = (string) $obj['Key'];
+                    if (!str_contains($key, 'backup-')) {
+                        continue;
+                    }
+                    $modified = '';
+                    if (isset($obj['LastModified']) && $obj['LastModified'] instanceof \DateTimeInterface) {
+                        $modified = $obj['LastModified']->format('c');
+                    } elseif (isset($obj['LastModified'])) {
+                        $modified = (string) $obj['LastModified'];
+                    }
+                    $items[] = [
+                        'key' => $key,
+                        'size' => (int) $obj['Size'],
+                        'modified' => $modified,
+                    ];
                 }
-                $modified = '';
-                if (isset($obj['LastModified']) && $obj['LastModified'] instanceof \DateTimeInterface) {
-                    $modified = $obj['LastModified']->format('c');
-                } elseif (isset($obj['LastModified'])) {
-                    $modified = (string) $obj['LastModified'];
+                usort(
+                    $items,
+                    function ($a, $b) {
+                        return strcmp($b['key'], $a['key']);
+                    }
+                );
+                $items = array_slice($items, 0, 5);
+                if (empty($items)) {
+                    echo '<p class="vcbk-muted">' . esc_html__('No backups found yet.', 'virakcloud-backup') . '</p>';
+                } else {
+                    echo '<ul>';
+                    foreach ($items as $it) {
+                        $key = $it['key'];
+                        $size = size_format((int) $it['size']);
+                        $restoreUrl = add_query_arg('key', rawurlencode($key), admin_url('admin.php?page=vcbk-restore'));
+                        echo '<li>' . esc_html($key . ' (' . $size . ')') . ' — ';
+                        echo '<a href="' . esc_url($restoreUrl) . '">' . esc_html__('Restore', 'virakcloud-backup') . '</a>';
+                        echo '</li>';
+                    }
+                    echo '</ul>';
                 }
-                $items[] = [
-                    'key' => $key,
-                    'size' => (int) $obj['Size'],
-                    'modified' => $modified,
-                ];
+            } catch (\Throwable $e) {
+                echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
             }
-            usort(
-                $items,
-                function ($a, $b) {
-                    return strcmp($b['key'], $a['key']);
-                }
-            );
-            $items = array_slice($items, 0, 5);
-            if (empty($items)) {
-                echo '<p class="vcbk-muted">' . esc_html__('No backups found yet.', 'virakcloud-backup') . '</p>';
-            } else {
-                echo '<ul>';
-                foreach ($items as $it) {
-                    $key = $it['key'];
-                    $size = size_format((int) $it['size']);
-                    $restoreUrl = add_query_arg('key', rawurlencode($key), admin_url('admin.php?page=vcbk-restore'));
-                    echo '<li>' . esc_html($key . ' (' . $size . ')') . ' — ';
-                    echo '<a href="' . esc_url($restoreUrl) . '">' . esc_html__('Restore', 'virakcloud-backup') . '</a>';
-                    echo '</li>';
-                }
-                echo '</ul>';
-            }
-        } catch (\Throwable $e) {
-            echo '<p class="vcbk-muted">' . esc_html($e->getMessage()) . '</p>';
-        }
         }
         echo '</div>';
 
