@@ -141,15 +141,12 @@ class BackupManager
                 $this->logger->debug('verify', ['ok' => $ok, 'sha256_present' => $ok]);
                 $this->logger->setProgress(100, $ok ? __('Complete', 'virakcloud-backup') : __('Finalizing', 'virakcloud-backup'));
                 update_option('vcbk_last_s3_upload', current_time('mysql'), false);
-                // Cleanup local artifacts after successful upload
-                @unlink($archivePath);
-                @unlink($manifestLocal);
+                // Keep the freshly created archive locally, prune older ones later
                 if (!empty($dbDumpPath) && is_string($dbDumpPath)) {
                     @unlink($dbDumpPath);
                 }
                 $this->logger->info('local_cleanup', [
-                    'archive_deleted' => !file_exists($archivePath),
-                    'manifest_deleted' => !file_exists($manifestLocal),
+                    'work_db_dump_deleted' => !(!empty($dbDumpPath) && file_exists($dbDumpPath)),
                 ]);
             } catch (\Throwable $e) {
                 $this->logger->error('s3_upload_failed', [
@@ -160,6 +157,10 @@ class BackupManager
         } else {
             $this->logger->debug('s3_upload_skipped', ['reason' => 'option']);
             $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+            // Even without S3 upload, remove temporary DB dump
+            if (!empty($dbDumpPath) && is_string($dbDumpPath)) {
+                @unlink($dbDumpPath);
+            }
         }
 
         // Retention policies could be applied here (list, prune)

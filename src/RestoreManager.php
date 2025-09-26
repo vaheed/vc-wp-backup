@@ -195,6 +195,7 @@ class RestoreManager
         }
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+        $this->cleanupRestoreArtifacts($archivePath, $tmpDir);
         if (function_exists('opcache_reset')) {
             @opcache_reset();
         }
@@ -342,6 +343,8 @@ class RestoreManager
         }
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+        // Cleanup temporary extraction and downloaded archive
+        $this->cleanupRestoreArtifacts($archivePath, $tmpDir);
         if (function_exists('opcache_reset')) {
             @opcache_reset();
         }
@@ -386,6 +389,36 @@ class RestoreManager
             }
         }
         closedir($dir);
+    }
+
+    private function cleanupRestoreArtifacts(string $archivePath, ?string $tmpDir): void
+    {
+        // Remove extracted temp directory
+        if ($tmpDir && is_dir($tmpDir)) {
+            $this->rrmdir($tmpDir);
+        }
+        // Remove downloaded archive if it is under uploads/virakcloud-backup/restore
+        $uploads = wp_get_upload_dir();
+        $restoreBase = trailingslashit($uploads['basedir']) . 'virakcloud-backup/restore/';
+        $normArchive = wp_normalize_path($archivePath);
+        if (str_starts_with($normArchive, wp_normalize_path($restoreBase)) && is_file($archivePath)) {
+            @unlink($archivePath);
+            $this->logger->info('restore_cleanup_archive_deleted', ['file' => basename($archivePath)]);
+        }
+    }
+
+    private function rrmdir(string $dir): void
+    {
+        if (!is_dir($dir)) { return; }
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $path) {
+            if ($path->isDir()) { @rmdir((string) $path); }
+            else { @unlink((string) $path); }
+        }
+        @rmdir($dir);
     }
 
     private function copyDirWithProgress(string $src, string $dst, int $startPercent = 70, int $endPercent = 90): void
