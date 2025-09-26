@@ -234,6 +234,9 @@ class RestoreManager
             }
         }
 
+        // As a safety net, ensure S3 settings remain valid after all file operations
+        $this->reconcileSettingsAfterImport($preservedSettings);
+
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         $this->cleanupRestoreArtifacts($archivePath, $tmpDir);
         if (function_exists('opcache_reset')) {
@@ -432,6 +435,9 @@ class RestoreManager
                 $this->logger->info('migrate_post_restore', ['from' => $from, 'to' => $to]);
             }
         }
+
+        // Safety net: ensure S3 settings persisted after all operations
+        $this->reconcileSettingsAfterImport($preserved);
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
         // Cleanup temporary extraction and downloaded archive
