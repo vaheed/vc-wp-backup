@@ -5,6 +5,9 @@ namespace VirakCloud\Backup;
 class ArchiveBuilder
 {
     private Logger $logger;
+    private int $progressCurrent = 40;
+    private int $progressMax = 69;
+    private int $processed = 0;
 
     public function __construct(Logger $logger)
     {
@@ -25,6 +28,9 @@ class ArchiveBuilder
     {
         $this->logger->debug('archive_build_start', ['format' => $format, 'output' => $output]);
         $format = $format === 'tar.gz' ? 'tar.gz' : 'zip';
+        $this->progressCurrent = 40;
+        $this->progressMax = 69; // keep 70 for next stage
+        $this->processed = 0;
         $manifest = [
             'format' => $format,
             'files' => [],
@@ -60,6 +66,12 @@ class ArchiveBuilder
             $phar->compress(\Phar::GZ);
             unset($phar);
             @unlink($tar);
+        }
+
+        // Cap progress at 70 after archiving
+        if ($this->progressCurrent < 70) {
+            $this->progressCurrent = 70;
+            $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
         }
 
         // Hash (may be expensive on large files; extend time limit but avoid WP-only calls here)
@@ -103,6 +115,7 @@ class ArchiveBuilder
             } else {
                 $zip->addFile($path, $rel);
             }
+            $this->tickArchivingProgress();
         }
     }
 
@@ -128,6 +141,7 @@ class ArchiveBuilder
                 continue;
             }
             $phar->addFile($path, $rel);
+            $this->tickArchivingProgress();
         }
     }
 
@@ -141,6 +155,7 @@ class ArchiveBuilder
             return;
         }
         $zip->addFile($filePath, $rel);
+        $this->tickArchivingProgress();
     }
 
     /**
@@ -153,6 +168,17 @@ class ArchiveBuilder
             return;
         }
         $phar->addFile($filePath, $rel);
+        $this->tickArchivingProgress();
+    }
+
+    private function tickArchivingProgress(): void
+    {
+        $this->processed++;
+        // Bump progress roughly every 500 files, up to 69%
+        if ($this->processed % 500 === 0 && $this->progressCurrent < $this->progressMax) {
+            $this->progressCurrent++;
+            $this->logger->setProgress($this->progressCurrent, __('Archiving Files', 'virakcloud-backup'));
+        }
     }
 
     /**

@@ -95,7 +95,9 @@ class Uploader
             } catch (\Throwable $e) {
                 // ignore
             }
-            fclose($fp);
+            if (is_resource($fp)) {
+                @fclose($fp);
+            }
             $parts[] = [
                 'PartNumber' => $partNumber,
                 'ETag' => $result['ETag'],
