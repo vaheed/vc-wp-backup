@@ -58,6 +58,8 @@ class RestoreManager
             throw new \RuntimeException(__('Permission denied', 'virakcloud-backup'));
         }
         $preservePlugin = array_key_exists('preserve_plugin', $options) ? (bool) $options['preserve_plugin'] : true;
+        // Capture current settings so we can optionally preserve/merge creds after DB import
+        $preservedSettings = $this->settings->get();
         $dry = !empty($options['dry_run']);
 
         $this->logger->info('restore_full_start', ['archive' => basename($archivePath)]);
@@ -118,7 +120,24 @@ class RestoreManager
         if (!empty($sqlPaths)) {
             $this->logger->setProgress(45, __('Restoring DB', 'virakcloud-backup'));
             $this->importDatabase($sqlPaths[0]);
-            // For full-site restore, keep the settings from the backup (do NOT overwrite with current)
+            // Optionally preserve plugin settings from the current site (e.g., S3 keys)
+            if ($preservePlugin) {
+                update_option('vcbk_settings', $preservedSettings, false);
+                $this->logger->info('restore_settings_preserved');
+            } else {
+                // Fallback: if imported settings are missing critical S3 fields, merge from preserved
+                $imported = get_option('vcbk_settings', []);
+                if (!is_array($imported)) {
+                    $imported = [];
+                }
+                $s3 = $imported['s3'] ?? [];
+                $needMerge = empty($s3['bucket']) || empty($s3['access_key']) || empty($s3['secret_key']);
+                if ($needMerge) {
+                    $imported['s3'] = array_merge($preservedSettings['s3'] ?? [], $s3);
+                    update_option('vcbk_settings', $imported, false);
+                    $this->logger->info('restore_settings_merged');
+                }
+            }
             $this->logger->info('restore_db_import_complete');
         }
 
@@ -152,6 +171,9 @@ class RestoreManager
         }
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
         $this->logger->info('restore_full_complete');
         $this->logger->setProgress(100, __('Complete', 'virakcloud-backup'));
     }
@@ -275,6 +297,9 @@ class RestoreManager
         }
 
         $this->logger->setProgress(95, __('Finalizing', 'virakcloud-backup'));
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
         $this->logger->info('restore_complete');
         $this->logger->setProgress(100, __('Complete', 'virakcloud-backup'));
     }

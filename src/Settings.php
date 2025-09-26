@@ -26,13 +26,11 @@ class Settings
             'backup' => [
                 'type' => 'full',
                 'include' => ['wp-content'],
-                // Exclude plugin's own working/archives directory to avoid recursive growth
+                // Exclude common heavy directories; be precise to avoid false positives
                 'exclude' => [
-                    'cache',
-                    'node_modules',
-                    'uploads/virakcloud-backup',
+                    '*/cache/*',
+                    '*/node_modules/*',
                     'wp-content/uploads/virakcloud-backup',
-                    'virakcloud-backup',
                 ],
                 'archive_format' => getenv('VCBK_ARCHIVE_FORMAT') ?: 'zip',
                 'encryption' => [
@@ -59,6 +57,23 @@ class Settings
         ];
         $saved = get_option($this->option, []);
         $merged = wp_parse_args($saved, $defaults);
+        // Normalize legacy exclude patterns (migration from broad substrings)
+        if (isset($merged['backup']['exclude']) && is_array($merged['backup']['exclude'])) {
+            $norm = [];
+            foreach ($merged['backup']['exclude'] as $pat) {
+                if ($pat === 'cache') {
+                    $pat = '*/cache/*';
+                } elseif ($pat === 'node_modules') {
+                    $pat = '*/node_modules/*';
+                } elseif ($pat === 'uploads/virakcloud-backup' || $pat === 'virakcloud-backup') {
+                    $pat = 'wp-content/uploads/virakcloud-backup';
+                }
+                if ($pat !== '' && !in_array($pat, $norm, true)) {
+                    $norm[] = $pat;
+                }
+            }
+            $merged['backup']['exclude'] = $norm;
+        }
         return $merged;
     }
 

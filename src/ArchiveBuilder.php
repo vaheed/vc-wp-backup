@@ -152,10 +152,7 @@ class ArchiveBuilder
      */
     private function isExcluded(string $relativePath, array $exclude): bool
     {
-        // Always exclude our plugin working directory if present in path
-        if (strpos($relativePath, 'virakcloud-backup/') !== false || strpos($relativePath, 'virakcloud-backup\\') !== false) {
-            return true;
-        }
+        // Rely solely on configured patterns; no hard-coded exclusions here.
         foreach ($exclude as $pattern) {
             if ($pattern === '') {
                 continue;
@@ -167,8 +164,9 @@ class ArchiveBuilder
                     return true;
                 }
             } else {
-                // Otherwise treat as a substring (directory or file name)
-                if (strpos($relativePath, $pattern) !== false) {
+                // Treat as a path-segment match (avoid broad substring matches)
+                $segments = preg_split('#[\\\\/]#', $relativePath) ?: [];
+                if (in_array($pattern, $segments, true)) {
                     return true;
                 }
             }
