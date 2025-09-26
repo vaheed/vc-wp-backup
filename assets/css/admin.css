@@ -1,11 +1,44 @@
-.vcbk-alert{padding:10px;border-radius:4px;margin:10px 0}
+/* VirakCloud Backup admin UI polish */
+:root{
+  --vcbk-primary:#1f6fb2; --vcbk-primary-600:#165a91;
+  --vcbk-surface:#fff; --vcbk-bg:#f6f8fb; --vcbk-border:#e7eaf0;
+  --vcbk-muted:#6f7785; --vcbk-text:#121417;
+  --vcbk-success:#1e8e3e; --vcbk-warn:#b8860b; --vcbk-danger:#b21f2d;
+}
+
+.vcbk-alert{padding:10px;border-radius:8px;margin:10px 0}
 .vcbk-ok{background:#e7f5e7;color:#1e4620;border:1px solid #a3d7a3}
 .vcbk-warn{background:#fff8e1;color:#7a5d00;border:1px solid #ffe08a}
 .vcbk-err{background:#fdecea;color:#611a15;border:1px solid #f5c6cb}
-.vcbk-card{background:#fff;border:1px solid #ccd0d4;border-radius:6px;padding:16px;margin-top:12px;box-shadow:0 1px 1px rgba(0,0,0,.02)}
-.vcbk-muted{color:#555}
+
+.vcbk-card{background:var(--vcbk-surface);border:1px solid var(--vcbk-border);border-radius:10px;padding:16px 20px;margin:16px 0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.vcbk-muted{color:var(--vcbk-muted)}
 .vcbk-actions .button{margin-right:6px}
-.vcbk-progress{background:#eee;width:100%;max-width:720px;height:16px;border-radius:8px;overflow:hidden}
-.vcbk-progress-bar{height:100%;width:0;background:#2271b1;transition:width .3s ease}
-pre.vcbk-log{max-height:180px;overflow:auto;background:#0b0d0e;color:#eaeef3;padding:12px;border-radius:6px;border:1px solid #1f2326;font-size:12px;line-height:1.35}
+
+.vcbk-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;line-height:1.6;border:1px solid transparent}
+.vcbk-badge.ok{background:#e7f5e7;color:#1e4620;border-color:#a3d7a3}
+.vcbk-badge.warn{background:#fff8e1;color:#7a5d00;border-color:#ffe08a}
+.vcbk-badge.err{background:#fdecea;color:#611a15;border-color:#f5c6cb}
+
+.vcbk-progress{background:#eef1f5;width:100%;max-width:720px;height:16px;border-radius:8px;overflow:hidden}
+.vcbk-progress-bar{height:100%;width:0;background:var(--vcbk-primary);transition:width .3s ease}
+
+/* Optional shimmer when success class present */
+.vcbk-progress-bar.success{background:var(--vcbk-success);position:relative}
+.vcbk-progress-bar.success::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:vcbkShimmer 1.6s linear infinite}
+@keyframes vcbkShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+pre.vcbk-log{max-height:220px;overflow:auto;background:#0b0d0e;color:#eaeef3;padding:12px;border-radius:8px;border:1px solid #1f2326;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre.vcbk-log .level-info{color:#a3b1c6} pre.vcbk-log .level-debug{color:#7db0ff} pre.vcbk-log .level-error{color:#ff8b8b}
+
+/* Tables/lists */
+.vcbk-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--vcbk-border);border-radius:10px;overflow:hidden}
+.vcbk-table th{background:#f3f6fa;color:#333;text-align:left;padding:10px 12px;border-bottom:1px solid var(--vcbk-border)}
+.vcbk-table td{padding:10px 12px;border-bottom:1px solid var(--vcbk-border)}
+.vcbk-table tr:nth-child(odd) td{background:#fbfcfe}
+
+/* Buttons (enhance WP styles slightly) */
+.button.button-primary{background:var(--vcbk-primary);border-color:var(--vcbk-primary-600)}
+.button.button-primary:hover{background:var(--vcbk-primary-600);border-color:var(--vcbk-primary-600)}
+
 @media(prefers-contrast: more){.vcbk-progress-bar{background:#005ea6}}

@@ -64,6 +64,15 @@ class RestoreManager
             ],
         ]);
         $this->logger->info('restore_download_complete', ['file' => $local]);
+        // Verify checksum against manifest when available
+        try {
+            $this->logger->setProgress(14, __('Verifying download', 'virakcloud-backup'));
+            $sha = @hash_file('sha256', $local) ?: '';
+            $this->maybeVerifyWithManifest($client, $bucket, $key, $sha);
+            $this->logger->debug('restore_download_sha256', ['sha256' => $sha]);
+        } catch (\Throwable $e) {
+            $this->logger->error('restore_verify_warning', ['message' => $e->getMessage()]);
+        }
         $this->logger->setProgress(15, __('Downloaded', 'virakcloud-backup'));
 
         $this->restoreLocal($local, $options);
@@ -283,6 +292,15 @@ class RestoreManager
                 }
             ],
         ]);
+        // Verify checksum
+        try {
+            $this->logger->setProgress(14, __('Verifying download', 'virakcloud-backup'));
+            $sha = @hash_file('sha256', $local) ?: '';
+            $this->maybeVerifyWithManifest($client, $bucket, $key, $sha);
+            $this->logger->debug('restore_download_sha256', ['sha256' => $sha]);
+        } catch (\Throwable $e) {
+            $this->logger->error('restore_verify_warning', ['message' => $e->getMessage()]);
+        }
         $this->restoreFullLocal($local, $options);
     }
 
@@ -564,6 +582,35 @@ class RestoreManager
                     ]);
                 }
             }
+        }
+    }
+
+    /**
+     * Attempt to fetch the manifest for a given backup key and compare sha256.
+     * Throws RuntimeException if mismatch is detected.
+     */
+    private function maybeVerifyWithManifest(\Aws\S3\S3Client $client, string $bucket, string $archiveKey, string $shaLocal): void
+    {
+        // Expect keys like backups/<site-prefix>/backup-<type>-YYYYmmdd-His.ext
+        $base = basename($archiveKey);
+        if (!preg_match('/backup-[^-]+-(\d{8}-\d{6})\./', $base, $m)) {
+            return; // unknown pattern
+        }
+        $ts = $m[1];
+        $prefix = dirname($archiveKey);
+        $manifestKey = rtrim($prefix, '/') . '/manifest-' . $ts . '.json';
+        try {
+            $res = $client->getObject(['Bucket' => $bucket, 'Key' => $manifestKey]);
+            $json = (string) $res['Body'];
+            $data = json_decode($json, true);
+            if (is_array($data) && !empty($data['archive_sha256']) && is_string($data['archive_sha256'])) {
+                $shaManifest = strtolower($data['archive_sha256']);
+                if ($shaLocal !== '' && strtolower($shaLocal) !== $shaManifest) {
+                    throw new \RuntimeException('Checksum mismatch with manifest ' . $manifestKey);
+                }
+            }
+        } catch (\Aws\S3\Exception\S3Exception $e) {
+            // Manifest missing is not fatal; just skip
         }
     }
 
