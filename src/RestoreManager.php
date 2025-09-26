@@ -140,9 +140,10 @@ class RestoreManager
         $this->copyTree($srcRoot, rtrim(ABSPATH, '/'), $exclude);
 
         // Optional post-restore URL rewrite (migration)
-        if (!empty($options['migrate']) && is_array($options['migrate'])) {
-            $from = (string) ($options['migrate']['from'] ?? '');
-            $to = (string) ($options['migrate']['to'] ?? '');
+        if (isset($options['migrate'])) {
+            $migrate = $options['migrate'];
+            $from = (string) $migrate['from'];
+            $to = (string) $migrate['to'];
             if ($from !== '' && $to !== '' && $from !== $to) {
                 $this->logger->setProgress(85, __('Rewriting URLs', 'virakcloud-backup'));
                 (new MigrationManager($this->logger))->searchReplace($from, $to);
@@ -262,9 +263,10 @@ class RestoreManager
         $this->recurseCopy($srcRoot . '/wp-content', $content);
 
         // Optional post-restore URL rewrite (migration)
-        if (!empty($options['migrate']) && is_array($options['migrate'])) {
-            $from = (string) ($options['migrate']['from'] ?? '');
-            $to = (string) ($options['migrate']['to'] ?? '');
+        if (isset($options['migrate'])) {
+            $migrate = $options['migrate'];
+            $from = (string) $migrate['from'];
+            $to = (string) $migrate['to'];
             if ($from !== '' && $to !== '' && $from !== $to) {
                 $this->logger->setProgress(85, __('Rewriting URLs', 'virakcloud-backup'));
                 (new MigrationManager($this->logger))->searchReplace($from, $to);

@@ -74,16 +74,17 @@ class BackupManager
         // Build archive
         $arch = new ArchiveBuilder($this->logger);
         $this->logger->setProgress(40, __('Archiving Files', 'virakcloud-backup'));
-        $options = [];
+        // Options for ArchiveBuilder (separate from $options passed to this method)
+        $archOptions = [];
         if ($type === 'incremental') {
             $last = get_option('vcbk_last_backup');
             $cutoff = is_string($last) ? strtotime($last) : false;
             if ($cutoff !== false) {
-                $options['modifiedSince'] = (int) $cutoff;
+                $archOptions['modifiedSince'] = (int) $cutoff;
                 $this->logger->debug('incremental_cutoff', ['ts' => $cutoff]);
             }
         }
-        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude, $options);
+        $manifest = $arch->build($cfg['backup']['archive_format'], $paths, $archivePath, $exclude, $archOptions);
         $this->logger->setProgress(70, __('Upload Pending', 'virakcloud-backup'));
         $this->checkControl();
 
